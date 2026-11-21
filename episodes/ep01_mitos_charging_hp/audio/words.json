@@ -1,7 +1,7 @@
 [
   {
     "word": "Hampir",
-    "start": 0.0,
+    "start": 0,
     "end": 0.34
   },
   {
@@ -100,7 +100,7 @@
     "end": 6.503
   },
   {
-    "word": "beda",
+    "word": "bedah",
     "start": 6.503,
     "end": 6.743
   },
@@ -115,13 +115,8 @@
     "end": 7.243
   },
   {
-    "word": "lithium",
+    "word": "lithium-ion",
     "start": 7.243,
-    "end": 7.503
-  },
-  {
-    "word": "-ion",
-    "start": 7.503,
     "end": 7.743
   },
   {
@@ -150,7 +145,7 @@
     "end": 9.663
   },
   {
-    "word": "-meters",
+    "word": "mitos",
     "start": 9.663,
     "end": 9.943
   },
@@ -180,17 +175,12 @@
     "end": 12.479
   },
   {
-    "word": "nge",
+    "word": "ngecas",
     "start": 12.879,
-    "end": 13.279
-  },
-  {
-    "word": "-charge",
-    "start": 13.279,
     "end": 13.379
   },
   {
-    "word": "hape",
+    "word": "HP",
     "start": 13.379,
     "end": 13.639
   },
@@ -205,13 +195,8 @@
     "end": 14.299
   },
   {
-    "word": "100",
+    "word": "100%",
     "start": 14.299,
-    "end": 14.639
-  },
-  {
-    "word": "%",
-    "start": 14.639,
     "end": 14.919
   },
   {
@@ -227,11 +212,6 @@
   {
     "word": "overcharge",
     "start": 15.519,
-    "end": 15.959
-  },
-  {
-    "word": "-nya",
-    "start": 15.959,
     "end": 16.119
   },
   {
@@ -260,7 +240,7 @@
     "end": 18.609
   },
   {
-    "word": "hape",
+    "word": "HP",
     "start": 19.029,
     "end": 19.329
   },
@@ -290,7 +270,7 @@
     "end": 20.629
   },
   {
-    "word": "mic",
+    "word": "PMIC",
     "start": 20.629,
     "end": 20.869
   },
@@ -370,7 +350,7 @@
     "end": 27.691
   },
   {
-    "word": "overchargih,",
+    "word": "overcharge,",
     "start": 27.691,
     "end": 28.391
   },
@@ -400,13 +380,8 @@
     "end": 30.091
   },
   {
-    "word": "4",
+    "word": "4,2V",
     "start": 30.091,
-    "end": 30.371
-  },
-  {
-    "word": ".2V",
-    "start": 30.371,
     "end": 30.971
   },
   {
@@ -465,7 +440,7 @@
     "end": 35.195
   },
   {
-    "word": "hape",
+    "word": "HP",
     "start": 35.195,
     "end": 35.395
   },
@@ -540,7 +515,7 @@
     "end": 40.955
   },
   {
-    "word": "Optimizet",
+    "word": "Optimized",
     "start": 40.955,
     "end": 41.455
   },
@@ -565,7 +540,7 @@
     "end": 42.595
   },
   {
-    "word": "hape",
+    "word": "HP",
     "start": 42.595,
     "end": 42.875
   },
@@ -580,13 +555,8 @@
     "end": 44.35
   },
   {
-    "word": "ke",
+    "word": "kedua,",
     "start": 44.35,
-    "end": 44.45
-  },
-  {
-    "word": "2,",
-    "start": 44.45,
     "end": 44.65
   },
   {
@@ -625,7 +595,7 @@
     "end": 46.87
   },
   {
-    "word": "bentrop",
+    "word": "bentrok",
     "start": 46.87,
     "end": 47.19
   },
@@ -680,7 +650,7 @@
     "end": 51.163
   },
   {
-    "word": "arusi",
+    "word": "arus",
     "start": 51.163,
     "end": 51.423
   },
@@ -690,7 +660,7 @@
     "end": 51.543
   },
   {
-    "word": "menterok.",
+    "word": "bentrok.",
     "start": 51.543,
     "end": 51.963
   },
@@ -700,17 +670,12 @@
     "end": 53.003
   },
   {
-    "word": "diam",
+    "word": "diam-diam",
     "start": 53.003,
-    "end": 53.103
-  },
-  {
-    "word": "-diam",
-    "start": 53.103,
     "end": 53.403
   },
   {
-    "word": "rusak",
+    "word": "merusak",
     "start": 53.403,
     "end": 53.683
   },
@@ -785,8 +750,13 @@
     "end": 57.763
   },
   {
-    "word": "Disuhu",
+    "word": "Di",
     "start": 58.608,
+    "end": 58.828
+  },
+  {
+    "word": "suhu",
+    "start": 58.828,
     "end": 59.048
   },
   {
@@ -840,7 +810,7 @@
     "end": 63.428
   },
   {
-    "word": "CE",
+    "word": "SEI",
     "start": 63.428,
     "end": 63.668
   },
@@ -890,8 +860,13 @@
     "end": 67.094
   },
   {
-    "word": "cetringan",
+    "word": "chat",
     "start": 67.094,
+    "end": 67.284
+  },
+  {
+    "word": "ringan",
+    "start": 67.284,
     "end": 67.474
   },
   {
@@ -905,13 +880,8 @@
     "end": 68.134
   },
   {
-    "word": "aman",
+    "word": "aman-aman",
     "start": 68.474,
-    "end": 68.694
-  },
-  {
-    "word": "-aman",
-    "start": 68.694,
     "end": 68.854
   },
   {
@@ -1040,7 +1010,7 @@
     "end": 77.532
   },
   {
-    "word": "kapra,",
+    "word": "kaprah,",
     "start": 77.532,
     "end": 77.912
   },
@@ -1055,7 +1025,7 @@
     "end": 78.892
   },
   {
-    "word": "dikura",
+    "word": "dikuras",
     "start": 78.892,
     "end": 79.212
   },
@@ -1065,13 +1035,8 @@
     "end": 79.412
   },
   {
-    "word": "0",
+    "word": "0%",
     "start": 79.412,
-    "end": 79.632
-  },
-  {
-    "word": "%",
-    "start": 79.632,
     "end": 79.872
   },
   {
@@ -1135,13 +1100,8 @@
     "end": 83.988
   },
   {
-    "word": "nickel",
+    "word": "nikel-kadmium",
     "start": 83.988,
-    "end": 84.148
-  },
-  {
-    "word": "-cadmium",
-    "start": 84.148,
     "end": 84.568
   },
   {
@@ -1150,13 +1110,8 @@
     "end": 84.808
   },
   {
-    "word": "90",
+    "word": "90-an",
     "start": 84.808,
-    "end": 85.228
-  },
-  {
-    "word": "-an",
-    "start": 85.228,
     "end": 85.528
   },
   {
@@ -1185,13 +1140,8 @@
     "end": 87.948
   },
   {
-    "word": "lithium",
+    "word": "lithium-ion",
     "start": 87.948,
-    "end": 88.148
-  },
-  {
-    "word": "yang",
-    "start": 88.148,
     "end": 88.368
   },
   {
@@ -1250,13 +1200,8 @@
     "end": 92.739
   },
   {
-    "word": "lithium",
+    "word": "lithium-ion",
     "start": 92.739,
-    "end": 92.999
-  },
-  {
-    "word": "yang",
-    "start": 92.999,
     "end": 93.159
   },
   {
@@ -1290,12 +1235,17 @@
     "end": 95.619
   },
   {
-    "word": "dipdiskargi",
+    "word": "deep",
     "start": 95.619,
+    "end": 95.929
+  },
+  {
+    "word": "discharge",
+    "start": 95.929,
     "end": 96.239
   },
   {
-    "word": "stres",
+    "word": "stress",
     "start": 96.239,
     "end": 96.499
   },
@@ -1330,7 +1280,7 @@
     "end": 98.579
   },
   {
-    "word": "Reset",
+    "word": "Riset",
     "start": 99.453,
     "end": 99.793
   },
@@ -1395,13 +1345,8 @@
     "end": 103.413
   },
   {
-    "word": "melipat",
+    "word": "melipatgandakan",
     "start": 103.413,
-    "end": 103.753
-  },
-  {
-    "word": "gandakan",
-    "start": 103.753,
     "end": 104.053
   },
   {
@@ -1520,7 +1465,7 @@
     "end": 112.914
   },
   {
-    "word": "science",
+    "word": "sains",
     "start": 112.914,
     "end": 113.174
   },

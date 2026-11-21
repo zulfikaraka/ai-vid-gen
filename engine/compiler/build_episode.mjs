@@ -36,7 +36,11 @@ for (const folder of ["assets", "audio"]) {
   const target = path.join(absEpDir, folder);
   const linkPath = path.join(buildDir, folder);
   if (fs.existsSync(target) && !fs.existsSync(linkPath)) {
-    fs.symlinkSync(target, linkPath, "dir");
+    try {
+      fs.symlinkSync(target, linkPath, process.platform === "win32" ? "junction" : "dir");
+    } catch {
+      fs.cpSync(target, linkPath, { recursive: true });
+    }
   }
 }
 
@@ -156,7 +160,9 @@ function renderProceduralVisual(proc, format) {
 
 function renderBeat(beat, idx, relStart, format) {
   const dur = beat.duration;
-  const isVideo = beat.visual?.kind === "veo_video" && Boolean(beat.visual.src);
+  const wantsVideo = beat.visual?.kind === "veo_video" && Boolean(beat.visual.src);
+  const videoExists = wantsVideo && fs.existsSync(path.join(absEpDir, beat.visual.src));
+  const isVideo = wantsVideo && videoExists;
   const themeCls = isVideo ? "" : (beat.theme === "studio" ? "theme-studio" : "theme-cutaway");
   const headerTone = beat.theme === "studio" ? "on-light" : "on-dark";
   const motionCls = beat.motion ? `motion-${beat.motion}` : "motion-push-in";
@@ -165,6 +171,13 @@ function renderBeat(beat, idx, relStart, format) {
   let visualHtml = "";
   if (isVideo) {
     videoElement = `<video id="video-${idx}" class="clip" src="${esc(beat.visual.src)}" data-start="${fmtSec(relStart)}" data-duration="${fmtSec(dur)}" data-track-index="1" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;" muted></video>`;
+  } else if (wantsVideo && !videoExists) {
+    visualHtml = `
+      <div class="pending-clip-card">
+        <span class="pending-clip-badge">GATE 2B — KLIP VIDEO BELUM DI-GENERATE</span>
+        <div class="pending-clip-file">${esc(beat.visual.src)}</div>
+        <div class="pending-clip-hint">Generate klip ini di Gate 2B agar visual 3D animasi muncul di scene ini</div>
+      </div>`;
   } else if (beat.visual?.kind === "still_3d" && beat.visual.src) {
     visualHtml = `<div class="media-frame"><img src="${esc(beat.visual.src)}" class="${motionCls}" style="--clip-dur:${fmtSec(dur)}s" alt="" /></div>`;
   } else if (beat.visual?.kind === "procedural") {
@@ -266,16 +279,23 @@ function buildCompositionHtml({ title, format, width, height, totalDuration, bea
       const TOTAL_DURATION = ${fmtSec(totalDuration)};
       const PHRASES = ${JSON.stringify(phrases)};
       const box = document.getElementById("karaoke-box");
+      const wm = document.getElementById("channel-watermark");
       const scenes = Array.from(document.querySelectorAll(".scene-layer")).map((el) => ({
         el,
+        isStudio: el.classList.contains("theme-studio"),
         start: parseFloat(el.dataset.start || "0"),
         end: parseFloat(el.dataset.start || "0") + parseFloat(el.dataset.duration || "0"),
       }));
 
       function renderAt(t) {
+        let activeScene = null;
         for (const s of scenes) {
           const visible = t >= s.start && t < s.end;
           s.el.style.display = visible ? "block" : "none";
+          if (visible) activeScene = s;
+        }
+        if (wm) {
+          wm.classList.toggle("on-light", Boolean(activeScene && activeScene.isStudio));
         }
         const activePhrase = PHRASES.find((p) => t >= p.start && t <= p.end);
         if (!activePhrase) {
@@ -341,6 +361,7 @@ const longHtml = buildCompositionHtml({
 });
 const longOutPath = path.join(buildDir, "long_16x9.html");
 fs.writeFileSync(longOutPath, longHtml, "utf8");
+fs.writeFileSync(path.join(buildDir, "index.html"), longHtml, "utf8");
 console.log(`Built 16:9 Long-Form: ${longOutPath} (${totalDuration.toFixed(1)}s)`);
 
 // 2. Standalone 9:16 Short/Reel per Module
