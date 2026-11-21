@@ -1,0 +1,17 @@
+{
+  "name": "proof-and-myth-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Full-AI programmatic video studio for Proof & Myth (YouTube Long/Shorts + Facebook Pro Reels) powered by HyperFrames & Google Flow",
+  "scripts": {
+    "build:episode": "node engine/compiler/build_episode.mjs",
+    "build:demo": "node engine/compiler/build_episode.mjs episodes/ep00_demo_thermal_myth",
+    "preview:demo": "npx hyperframes preview episodes/ep00_demo_thermal_myth/build/long_16x9.html",
+    "render:demo:long": "npx hyperframes render --composition episodes/ep00_demo_thermal_myth/build/long_16x9.html --output episodes/ep00_demo_thermal_myth/output/ep00_long_16x9.mp4",
+    "render:demo:short": "npx hyperframes render --composition episodes/ep00_demo_thermal_myth/build/short_mod1_9x16.html --output episodes/ep00_demo_thermal_myth/output/ep00_short_mod1_9x16.mp4"
+  },
+  "dependencies": {
+    "hyperframes": "latest"
+  }
+}

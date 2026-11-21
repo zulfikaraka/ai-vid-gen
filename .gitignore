@@ -1,0 +1,11 @@
+.env
+.venv/
+node_modules/
+tools/
+.hyperframes/
+__pycache__/
+*.pyc
+episodes/*/build/
+episodes/*/output/
+episodes/*/audio/beats/
+.DS_Store

@@ -1,0 +1,535 @@
+{
+  "id": "ep01_mitos_charging_hp",
+  "title": "3 Mitos Charging HP: Fakta Sains di Balik Baterai Lithium-Ion",
+  "watermark": "PROOF & MYTH",
+  "audio": {
+    "vo": "audio/vo_master.mp3",
+    "bgm": "audio/bgm.mp3"
+  },
+  "intro": {
+    "beats": [
+      {
+        "duration": 5.843,
+        "theme": "studio",
+        "motion": "push-in",
+        "specularSweep": true,
+        "narration": "Hampir setiap hari kita ngecas HP, tapi ternyata banyak kebiasaan yang kita anggap benar justru salah total.",
+        "visual": {
+          "kind": "still_3d",
+          "src": "assets/stills/01_phone_charging_studio.png"
+        },
+        "chapter": {
+          "line1": "3 Mitos Charging HP:",
+          "line2": "fakta atau cuma hoaks?",
+          "accent": "red"
+        },
+        "badges": [
+          {
+            "text": "PROOF & MYTH #01",
+            "variant": "dark",
+            "pos": {
+              "x": 82,
+              "y": 14
+            },
+            "pos9x16": {
+              "x": 50,
+              "y": 24
+            }
+          }
+        ]
+      },
+      {
+        "duration": 6.056,
+        "theme": "cutaway",
+        "microscope": true,
+        "narration": "Hari ini kita bedah isi baterai lithium-ion secara mikroskopis untuk membuktikan tiga mitos charging paling populer.",
+        "visual": {
+          "kind": "veo_video",
+          "src": "assets/clips/01_phone_to_battery_cutaway.mp4"
+        },
+        "chapter": {
+          "line1": "Bedah isi baterai:",
+          "line2": "apa yang sebenarnya terjadi?",
+          "accent": "yellow"
+        }
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "mod1_cas_semalaman",
+      "title": "Mitos #1: Ngecas Semalaman Bikin Baterai Meledak?",
+      "audio_vo": "audio/vo_mod1_cas_semalaman.mp3",
+      "beats": [
+        {
+          "duration": 6.21,
+          "theme": "studio",
+          "motion": "push-in",
+          "narration": "Mitos pertama: ngecas HP semalaman sampai seratus persen bikin baterai overcharge lalu rusak atau meledak.",
+          "visual": {
+            "kind": "still_3d",
+            "src": "assets/stills/02_overnight_charging_phone.png"
+          },
+          "chapter": {
+            "line1": "Mitos #1: Cas semalaman",
+            "line2": "bikin baterai overcharge?",
+            "accent": "red"
+          },
+          "badges": [
+            {
+              "text": "MITOS #1",
+              "variant": "myth",
+              "pos": {
+                "x": 82,
+                "y": 14
+              },
+              "pos9x16": {
+                "x": 50,
+                "y": 24
+              }
+            }
+          ]
+        },
+        {
+          "duration": 7.322,
+          "theme": "cutaway",
+          "microscope": true,
+          "narration": "Faktanya, HP modern punya chip pintar bernama PMIC yang otomatis memutus arus pengisian utama begitu baterai menyentuh seratus persen.",
+          "visual": {
+            "kind": "veo_video",
+            "src": "assets/clips/02_pmic_chip_cutoff.mp4"
+          },
+          "chapter": {
+            "line1": "Di dalam motherboard:",
+            "line2": "chip PMIC memutus arus",
+            "accent": "blue"
+          },
+          "badges": [
+            {
+              "text": "CHIP PMIC",
+              "variant": "state",
+              "pos": {
+                "x": 30,
+                "y": 46
+              },
+              "pos9x16": {
+                "x": 34,
+                "y": 44
+              }
+            },
+            {
+              "text": "ARUS DIPUTUS DI 100%",
+              "variant": "fact",
+              "pos": {
+                "x": 70,
+                "y": 60
+              },
+              "pos9x16": {
+                "x": 64,
+                "y": 58
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "from": {
+                "x": 30,
+                "y": 49
+              },
+              "to": {
+                "x": 46,
+                "y": 52
+              },
+              "from9x16": {
+                "x": 34,
+                "y": 47
+              },
+              "to9x16": {
+                "x": 48,
+                "y": 50
+              },
+              "color": "#38bdf8"
+            }
+          ]
+        },
+        {
+          "duration": 9.064,
+          "theme": "cutaway",
+          "motion": "push-in",
+          "narration": "Tapi tunggu dulu. Meski tidak overcharge, menahan baterai di tegangan puncak empat koma dua volt selama tujuh jam tetap mempercepat penuaan kimia di dalamnya.",
+          "visual": {
+            "kind": "still_3d",
+            "src": "assets/stills/03_high_voltage_cathode_stress.png"
+          },
+          "chapter": {
+            "line1": "Masalah sebenarnya:",
+            "line2": "stres tegangan puncak 4,2V",
+            "accent": "yellow"
+          },
+          "badges": [
+            {
+              "text": "TEGANGAN PUNCAK 4,2V+",
+              "variant": "myth",
+              "pos": {
+                "x": 68,
+                "y": 42
+              },
+              "pos9x16": {
+                "x": 58,
+                "y": 42
+              }
+            }
+          ]
+        },
+        {
+          "duration": 9.575,
+          "theme": "cutaway",
+          "narration": "Apalagi kalau HP ditaruh di atas kasur atau bawah bantal yang memerangkap panas. Jadi solusinya, aktifkan fitur Optimized Battery Charging di pengaturan HP kamu.",
+          "visual": {
+            "kind": "procedural",
+            "procedural": {
+              "type": "stat_bars",
+              "items": [
+                {
+                  "label": "Risiko Overcharge / Meledak (HP Asli)",
+                  "valueText": "MITOS",
+                  "percent": 6,
+                  "color": "#22c55e"
+                },
+                {
+                  "label": "Degradasi Kimia di 100% Semalaman",
+                  "valueText": "NYATA",
+                  "percent": 78,
+                  "color": "#facc15"
+                }
+              ]
+            }
+          },
+          "chapter": {
+            "line1": "Verdict Mitos #1:",
+            "line2": "tidak overcharge, tapi bikin cepat tua",
+            "accent": "yellow"
+          },
+          "badges": [
+            {
+              "text": "SETENGAH MITOS",
+              "variant": "fact",
+              "pos": {
+                "x": 82,
+                "y": 14
+              },
+              "pos9x16": {
+                "x": 50,
+                "y": 24
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod2_main_sambil_cas",
+      "title": "Mitos #2: Main HP Sambil Dicas Bikin Baterai Bocor?",
+      "audio_vo": "audio/vo_mod2_main_sambil_cas.mp3",
+      "beats": [
+        {
+          "duration": 5.613,
+          "theme": "studio",
+          "motion": "push-in",
+          "narration": "Mitos kedua: main HP sambil dicas bikin arus listrik bentrok di dalam baterai sampai cepat bocor.",
+          "visual": {
+            "kind": "still_3d",
+            "src": "assets/stills/04_gaming_while_charging.png"
+          },
+          "chapter": {
+            "line1": "Mitos #2: Main HP sambil cas",
+            "line2": "bikin arus listrik bentrok?",
+            "accent": "red"
+          },
+          "badges": [
+            {
+              "text": "MITOS #2",
+              "variant": "myth",
+              "pos": {
+                "x": 82,
+                "y": 14
+              },
+              "pos9x16": {
+                "x": 50,
+                "y": 24
+              }
+            }
+          ]
+        },
+        {
+          "duration": 8.925,
+          "theme": "cutaway",
+          "microscope": true,
+          "narration": "Secara listrik, tidak ada arus yang bentrok. Yang diam-diam merusak baterai adalah panas ganda dari proses charging ditambah panas prosesor saat main game berat.",
+          "visual": {
+            "kind": "veo_video",
+            "src": "assets/clips/03_dual_heat_buildup.mp4"
+          },
+          "chapter": {
+            "line1": "Pembunuh senyap:",
+            "line2": "panas ganda di atas 40°C",
+            "accent": "red"
+          },
+          "badges": [
+            {
+              "text": "PANAS PROSESOR (SoC)",
+              "variant": "myth",
+              "pos": {
+                "x": 32,
+                "y": 42
+              },
+              "pos9x16": {
+                "x": 36,
+                "y": 42
+              }
+            },
+            {
+              "text": "PANAS CHARGING",
+              "variant": "myth",
+              "pos": {
+                "x": 68,
+                "y": 60
+              },
+              "pos9x16": {
+                "x": 64,
+                "y": 58
+              }
+            }
+          ]
+        },
+        {
+          "duration": 7.826,
+          "theme": "cutaway",
+          "microscope": true,
+          "narration": "Di suhu di atas empat puluh derajat Celsius, elektrolit bereaksi membentuk kerak mikroskopis bernama lapisan SEI yang mengunci ion litium secara permanen.",
+          "visual": {
+            "kind": "veo_video",
+            "src": "assets/clips/04_sei_layer_growth.mp4"
+          },
+          "chapter": {
+            "line1": "Dunia mikroskopis:",
+            "line2": "kerak SEI menjebak ion litium",
+            "accent": "yellow"
+          },
+          "badges": [
+            {
+              "text": "KERAK LAPISAN SEI",
+              "variant": "fact",
+              "pos": {
+                "x": 50,
+                "y": 56
+              },
+              "pos9x16": {
+                "x": 50,
+                "y": 55
+              }
+            }
+          ]
+        },
+        {
+          "duration": 9.458,
+          "theme": "cutaway",
+          "narration": "Kalau cuma balas chat ringan sambil dicas, aman-aman saja. Tapi kalau main game berat sambil fast charging, baterai memang terbukti jauh lebih cepat turun kapasitasnya.",
+          "visual": {
+            "kind": "procedural",
+            "procedural": {
+              "type": "stat_bars",
+              "items": [
+                {
+                  "label": "Chat Ringan Sambil Cas (Suhu ~32°C)",
+                  "valueText": "AMAN",
+                  "percent": 22,
+                  "color": "#22c55e"
+                },
+                {
+                  "label": "Gaming Berat + Fast Charge (>43°C)",
+                  "valueText": "MERUSAK",
+                  "percent": 94,
+                  "color": "#ef4444"
+                }
+              ]
+            }
+          },
+          "chapter": {
+            "line1": "Verdict Mitos #2:",
+            "line2": "terbukti merusak karena panas",
+            "accent": "red"
+          },
+          "badges": [
+            {
+              "text": "TERBUKTI (PANAS)",
+              "variant": "myth",
+              "pos": {
+                "x": 82,
+                "y": 14
+              },
+              "pos9x16": {
+                "x": 50,
+                "y": 24
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod3_kuras_nol_persen",
+      "title": "Mitos #3: Baterai Wajib Dikuras Sampai 0%?",
+      "audio_vo": "audio/vo_mod3_kuras_nol_persen.mp3",
+      "beats": [
+        {
+          "duration": 6.116,
+          "theme": "studio",
+          "motion": "push-in",
+          "narration": "Mitos ketiga yang paling sering bikin orang salah kaprah: baterai harus dikuras sampai nol persen dulu baru boleh dicas penuh.",
+          "visual": {
+            "kind": "still_3d",
+            "src": "assets/stills/05_zero_percent_battery.png"
+          },
+          "chapter": {
+            "line1": "Mitos #3: Kuras sampai 0%",
+            "line2": "bikin baterai makin awet?",
+            "accent": "red"
+          },
+          "badges": [
+            {
+              "text": "MITOS #3",
+              "variant": "myth",
+              "pos": {
+                "x": 82,
+                "y": 14
+              },
+              "pos9x16": {
+                "x": 50,
+                "y": 24
+              }
+            }
+          ]
+        },
+        {
+          "duration": 9.311,
+          "theme": "cutaway",
+          "motion": "pan-right",
+          "narration": "Aturan itu hanya berlaku untuk baterai jadul nikel-kadmium tahun sembilan puluhan yang punya efek memori. Baterai lithium-ion modern bekerja dengan cara yang berkebalikan.",
+          "visual": {
+            "kind": "still_3d",
+            "src": "assets/stills/06_old_nicd_vs_liion.png"
+          },
+          "chapter": {
+            "line1": "Beda generasi baterai:",
+            "line2": "NiCd 1990-an vs Lithium-Ion",
+            "accent": "blue"
+          },
+          "badges": [
+            {
+              "text": "NiCd JADUL (EFEK MEMORI)",
+              "variant": "dark",
+              "pos": {
+                "x": 28,
+                "y": 62
+              },
+              "pos9x16": {
+                "x": 32,
+                "y": 44
+              }
+            },
+            {
+              "text": "LITHIUM-ION MODERN",
+              "variant": "state",
+              "pos": {
+                "x": 72,
+                "y": 62
+              },
+              "pos9x16": {
+                "x": 68,
+                "y": 58
+              }
+            }
+          ]
+        },
+        {
+          "duration": 8.134,
+          "theme": "cutaway",
+          "microscope": true,
+          "narration": "Setiap kali kamu memaksa baterai lithium-ion turun sampai nol persen, struktur anoda mengalami deep discharge stress yang memperpendek umur siklusnya secara drastis.",
+          "visual": {
+            "kind": "veo_video",
+            "src": "assets/clips/05_anode_deep_discharge.mp4"
+          },
+          "chapter": {
+            "line1": "Efek kuras 0%:",
+            "line2": "deep discharge stress pada anoda",
+            "accent": "red"
+          }
+        },
+        {
+          "duration": 7.001,
+          "theme": "cutaway",
+          "narration": "Riset baterai membuktikan menjaga daya di zona aman dua puluh sampai delapan puluh persen bisa melipatgandakan umur pakai baterai HP kamu.",
+          "visual": {
+            "kind": "procedural",
+            "procedural": {
+              "type": "stat_bars",
+              "items": [
+                {
+                  "label": "Pola 0% → 100% (Umur Siklus Standar)",
+                  "valueText": "~500 Siklus",
+                  "percent": 35,
+                  "color": "#ef4444"
+                },
+                {
+                  "label": "Zona Emas 20% → 80% (Paling Awet)",
+                  "valueText": "1.500+ Siklus",
+                  "percent": 95,
+                  "color": "#22c55e"
+                }
+              ]
+            }
+          },
+          "chapter": {
+            "line1": "Verdict Mitos #3:",
+            "line2": "mitos total — jaga di 20%–80%",
+            "accent": "yellow"
+          },
+          "badges": [
+            {
+              "text": "MITOS TOTAL",
+              "variant": "myth",
+              "pos": {
+                "x": 82,
+                "y": 14
+              },
+              "pos9x16": {
+                "x": 50,
+                "y": 24
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "outro": {
+    "beats": [
+      {
+        "duration": 8.187,
+        "theme": "cutaway",
+        "narration": "Dari tiga mitos tadi, mana yang paling sering kamu lakukan? Tulis di kolom komentar, dan subscribe untuk pembuktian sains berikutnya.",
+        "visual": {
+          "kind": "veo_video",
+          "src": "assets/clips/06_battery_health_outro.mp4"
+        },
+        "chapter": {
+          "line1": "Mana yang sering kamu lakukan?",
+          "line2": "tulis di komentar!",
+          "accent": "yellow"
+        }
+      }
+    ]
+  }
+}

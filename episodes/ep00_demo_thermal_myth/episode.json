@@ -1,0 +1,154 @@
+{
+  "id": "ep00_demo_thermal_myth",
+  "title": "Mitos Pasta Termal: Cuma Buat Dinginin CPU?",
+  "watermark": "PROOF & MYTH",
+  "audio": {
+    "vo": "audio/vo_master.mp3",
+    "bgm": "audio/bgm.mp3"
+  },
+  "intro": {
+    "beats": [
+      {
+        "duration": 3.0,
+        "theme": "studio",
+        "specularSweep": true,
+        "narration": "Banyak yang mengira permukaan CPU itu licin kayak cermin.",
+        "visual": {
+          "kind": "procedural",
+          "procedural": {
+            "type": "stat_bars",
+            "items": [
+              { "label": "Mitos: Permukaan 100% Rata", "valueText": "MITOS", "percent": 100, "color": "#ef4444" },
+              { "label": "Fakta: Kontak Logam Asli", "valueText": "Hanya ~1%", "percent": 8, "color": "#facc15" }
+            ]
+          }
+        },
+        "chapter": {
+          "line1": "Tanpa pasta termal:",
+          "line2": "apa yang terjadi?",
+          "accent": "red"
+        },
+        "badges": [
+          {
+            "text": "MITOS POPULER",
+            "variant": "myth",
+            "pos": { "x": 82, "y": 14 },
+            "pos9x16": { "x": 50, "y": 24 }
+          }
+        ]
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "mod1",
+      "title": "Dunia Mikroskopis CPU",
+      "beats": [
+        {
+          "duration": 4.5,
+          "theme": "cutaway",
+          "microscope": true,
+          "narration": "Tapi begitu dilihat lewat mikroskop, bentuk aslinya penuh tebing dan jurang.",
+          "visual": {
+            "kind": "procedural",
+            "procedural": {
+              "type": "microscopic_surface"
+            }
+          },
+          "chapter": {
+            "line1": "Dunia mikroskopis:",
+            "line2": "tebing & celah udara",
+            "accent": "yellow"
+          },
+          "badges": [
+            {
+              "text": "TEMBAGA PENDINGIN",
+              "variant": "tag",
+              "pos": { "x": 74, "y": 26 },
+              "pos9x16": { "x": 66, "y": 36 }
+            },
+            {
+              "text": "PUNCAK LOGAM",
+              "variant": "fact",
+              "pos": { "x": 30, "y": 64 },
+              "pos9x16": { "x": 34, "y": 61 }
+            },
+            {
+              "text": "CELAH UDARA TERJEBAK",
+              "variant": "myth",
+              "pos": { "x": 68, "y": 50 },
+              "pos9x16": { "x": 62, "y": 50 }
+            }
+          ],
+          "callouts": [
+            {
+              "from": { "x": 30, "y": 60 },
+              "to": { "x": 42, "y": 43 },
+              "from9x16": { "x": 34, "y": 58 },
+              "to9x16": { "x": 42, "y": 46 },
+              "color": "#facc15"
+            },
+            {
+              "from": { "x": 74, "y": 30 },
+              "to": { "x": 62, "y": 40 },
+              "from9x16": { "x": 66, "y": 39 },
+              "to9x16": { "x": 58, "y": 44 },
+              "color": "#f8fafc"
+            }
+          ]
+        },
+        {
+          "duration": 4.5,
+          "theme": "cutaway",
+          "narration": "Akibatnya 99 persen area terisi udara yang menghambat panas 15 ribu kali lebih buruk.",
+          "visual": {
+            "kind": "procedural",
+            "procedural": {
+              "type": "stat_bars",
+              "items": [
+                { "label": "Celah Udara (Penahan Panas)", "valueText": "99%", "percent": 99, "color": "#ef4444" },
+                { "label": "Kontak Logam Langsung", "valueText": "1%", "percent": 4, "color": "#38bdf8" }
+              ]
+            }
+          },
+          "chapter": {
+            "line1": "Musuh bernama udara:",
+            "line2": "penahan panas ekstrem",
+            "accent": "red"
+          },
+          "badges": [
+            {
+              "text": "FAKTA SAINS",
+              "variant": "fact",
+              "pos": { "x": 82, "y": 14 },
+              "pos9x16": { "x": 50, "y": 24 }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "outro": {
+    "beats": [
+      {
+        "duration": 3.0,
+        "theme": "cutaway",
+        "narration": "Jadi pasta termal bukan bikin dingin, tapi mengusir udara mikroskopis.",
+        "visual": {
+          "kind": "procedural",
+          "procedural": {
+            "type": "stat_bars",
+            "items": [
+              { "label": "Fungsi Pasta Termal: Usir Celah Udara", "valueText": "TERBUKTI", "percent": 100, "color": "#22c55e" }
+            ]
+          }
+        },
+        "chapter": {
+          "line1": "Kesimpulan:",
+          "line2": "bukan pendingin, tapi pengisi celah",
+          "accent": "yellow"
+        }
+      }
+    ]
+  }
+}
