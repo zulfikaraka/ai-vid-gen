@@ -1,0 +1,18 @@
+{
+  "name": "ai-vid-gen-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "googleapis": "^190.0.0",
+    "lucide-react": "^0.511.0",
+    "next": "^15.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

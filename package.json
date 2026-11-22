@@ -9,9 +9,14 @@
     "build:demo": "node engine/compiler/build_episode.mjs episodes/ep00_demo_thermal_myth",
     "preview:demo": "npx hyperframes preview episodes/ep00_demo_thermal_myth/build/long_16x9.html",
     "render:demo:long": "npx hyperframes render --composition episodes/ep00_demo_thermal_myth/build/long_16x9.html --output episodes/ep00_demo_thermal_myth/output/ep00_long_16x9.mp4",
-    "render:demo:short": "npx hyperframes render --composition episodes/ep00_demo_thermal_myth/build/short_mod1_9x16.html --output episodes/ep00_demo_thermal_myth/output/ep00_short_mod1_9x16.mp4"
+    "render:demo:short": "npx hyperframes render --composition episodes/ep00_demo_thermal_myth/build/short_mod1_9x16.html --output episodes/ep00_demo_thermal_myth/output/ep00_short_mod1_9x16.mp4",
+    "youtube:auth": "node scripts/youtube_auth.mjs",
+    "youtube:upload": "node scripts/youtube_upload.mjs",
+    "dashboard": "npm --prefix dashboard run dev"
   },
   "dependencies": {
+    "dotenv": "^18.0.10",
+    "googleapis": "^190.0.0",
     "hyperframes": "latest"
   }
 }
