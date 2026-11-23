@@ -12,7 +12,7 @@ export async function GET(_request, { params }) {
   return NextResponse.json(job);
 }
 
-export async function POST(_request, { params }) {
+export async function POST(request, { params }) {
   const { id } = await params;
   const cleanId = safeId(id);
   const epDir = path.join(EPISODES_DIR, cleanId);
@@ -25,11 +25,34 @@ export async function POST(_request, { params }) {
     return NextResponse.json(existing);
   }
 
-  const state = { status: "running", logs: [`Starting TTS generation for ${cleanId}...`], startedAt: new Date().toISOString() };
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  const tier = body.tier === "paid" ? "paid" : "free";
+  const model = typeof body.model === "string" && body.model.trim() ? body.model.trim() : "";
+  const voice = typeof body.voice === "string" && body.voice.trim() ? body.voice.trim() : "";
+  const force = Boolean(body.force);
+
+  const label = tier === "paid" ? `PAID (ElevenLabs${model ? ` / ${model}` : ""})` : "FREE (Gemini TTS)";
+  const state = {
+    status: "running",
+    tier,
+    logs: [`Starting TTS generation for ${cleanId} [${label}]...`],
+    startedAt: new Date().toISOString(),
+  };
   jobs.set(cleanId, state);
 
   const scriptPath = path.join(PROJECT_ROOT, "scripts", "tts_generate.py");
-  const child = spawn("python", [scriptPath, `episodes/${cleanId}`], {
+  const pyArgs = [scriptPath, `episodes/${cleanId}`, "--tier", tier];
+  if (tier === "paid" && model) pyArgs.push("--model", model);
+  if (voice) pyArgs.push("--voice", voice);
+  if (force) pyArgs.push("--force");
+
+  const child = spawn("python", pyArgs, {
     cwd: PROJECT_ROOT,
     shell: true,
   });

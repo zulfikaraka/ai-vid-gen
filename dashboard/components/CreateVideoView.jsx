@@ -49,6 +49,10 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
 
   // Step 3: TTS job
   const [ttsJob, setTtsJob] = useState({ status: "idle", logs: [] });
+  const [ttsTier, setTtsTier] = useState("free"); // "free" (Gemini TTS) | "paid" (ElevenLabs)
+  const [ttsModel, setTtsModel] = useState("eleven_multilingual_v2");
+  const [ttsVoice, setTtsVoice] = useState("wvv6DzcHyOVTDgDY7SMW"); // Andi - Clear and confident
+  const [ttsForce, setTtsForce] = useState(false);
 
   // Step 5: Render job
   const [renderJob, setRenderJob] = useState({ status: "idle", logs: [] });
@@ -194,14 +198,27 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
 
   async function handleRunTts() {
     if (!currentEp) return;
-    const res = await fetch(`/api/episodes/${currentEp.id}/tts`, { method: "POST" });
+    const res = await fetch(`/api/episodes/${currentEp.id}/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tier: ttsTier,
+        model: ttsTier === "paid" ? ttsModel : undefined,
+        voice: ttsTier === "paid" ? ttsVoice : undefined,
+        force: ttsForce,
+      }),
+    });
     const data = await res.json();
     if (!res.ok) {
       onToast(`❌ ${data.error}`);
       return;
     }
     setTtsJob(data);
-    onToast("🎙 Proses generate VO dimulai...");
+    onToast(
+      ttsTier === "paid"
+        ? `🎙 Proses generate VO (Paid — ElevenLabs ${ttsModel}) dimulai...`
+        : "🎙 Proses generate VO (Free — Gemini TTS) dimulai..."
+    );
   }
 
   async function handleUploadAsset(subdir, fileName, file) {
@@ -434,19 +451,94 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
                       Jalankan <code>scripts/tts_generate.py</code> untuk membuat VO &amp; <code>words.json</code>.
                     </div>
                   </div>
-                  <div className="row">
+                  <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
+                    <select
+                      className="input"
+                      style={{ width: "auto", minWidth: 190 }}
+                      value={ttsTier}
+                      onChange={(e) => setTtsTier(e.target.value)}
+                      disabled={ttsJob.status === "running"}
+                    >
+                      <option value="free">Free — Gemini TTS (0 cr)</option>
+                      <option value="paid">Paid — ElevenLabs</option>
+                    </select>
+                    {ttsTier === "paid" && (
+                      <>
+                        <select
+                          className="input"
+                          style={{ width: "auto", minWidth: 215 }}
+                          value={ttsVoice}
+                          onChange={(e) => setTtsVoice(e.target.value)}
+                          disabled={ttsJob.status === "running"}
+                        >
+                          <option value="wvv6DzcHyOVTDgDY7SMW">Andi — Clear &amp; Confident (Free/Paid)</option>
+                          <option value="TMvmhlKUioQA4U7LOoko">Andi — Friendly &amp; Calm (Paid Plan)</option>
+                        </select>
+                        <select
+                          className="input"
+                          style={{ width: "auto", minWidth: 205 }}
+                          value={ttsModel}
+                          onChange={(e) => setTtsModel(e.target.value)}
+                          disabled={ttsJob.status === "running"}
+                        >
+                          <option value="eleven_multilingual_v2">Multilingual v2 (1 cr/char)</option>
+                          <option value="eleven_flash_v2_5">Flash v2.5 (0.5 cr/char)</option>
+                        </select>
+                      </>
+                    )}
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--muted)", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={ttsForce}
+                        onChange={(e) => setTtsForce(e.target.checked)}
+                        disabled={ttsJob.status === "running"}
+                      />
+                      Force
+                    </label>
                     <button
                       className="btn btn-primary"
                       onClick={handleRunTts}
                       disabled={ttsJob.status === "running"}
                     >
-                      <Mic size={14} /> {ttsJob.status === "running" ? "Generating VO..." : "Generate VO (TTS)"}
+                      <Mic size={14} />{" "}
+                      {ttsJob.status === "running"
+                        ? "Generating VO..."
+                        : ttsTier === "paid"
+                        ? "Generate VO (ElevenLabs)"
+                        : "Generate VO (Gemini Free)"}
                     </button>
                     <button className="btn btn-success" onClick={() => setStep("visuals")}>
                       Approve &amp; Lanjut Visual <ArrowRight size={14} />
                     </button>
                   </div>
                 </div>
+
+                {(() => {
+                  const ep = currentEp.episode || {};
+                  const beats = [
+                    ...(ep.intro?.beats || []),
+                    ...(ep.modules || []).flatMap((m) => m.beats || []),
+                    ...(ep.outro?.beats || []),
+                  ];
+                  const chars = beats.reduce((acc, b) => acc + ((b.narration || "").trim().length), 0);
+                  const mult = ttsModel === "eleven_flash_v2_5" ? 0.5 : 1;
+                  const estCredits = Math.round(chars * mult);
+                  return (
+                    <div className="card-subtle" style={{ fontSize: 12.5, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                      <span>
+                        Total narasi: <strong>{chars.toLocaleString()} karakter</strong> ({beats.length} beats)
+                      </span>
+                      <span>
+                        Estimasi biaya:{" "}
+                        {ttsTier === "paid" ? (
+                          <strong>~{estCredits.toLocaleString()} ElevenLabs credits</strong>
+                        ) : (
+                          <strong>0 ElevenLabs credits (Gemini TTS Free)</strong>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {ttsJob.logs?.length > 0 && <div className="log-box">{ttsJob.logs.join("\n")}</div>}
 

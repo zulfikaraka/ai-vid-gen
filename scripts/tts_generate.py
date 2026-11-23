@@ -24,18 +24,22 @@ from pathlib import Path
 
 
 def load_dotenv(root: Path) -> None:
-    env_file = root / ".env"
-    if not env_file.exists():
-        return
-    for line in env_file.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    candidates = [
+        root / ".env",
+        Path(os.path.expandvars(r"%LOCALAPPDATA%\hermes\.env")),
+    ]
+    for env_file in candidates:
+        if not env_file.exists():
             continue
-        k, v = line.split("=", 1)
-        k = k.strip()
-        v = v.strip().strip('"').strip("'")
-        if k and k not in os.environ:
-            os.environ[k] = v
+        for line in env_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            k = k.strip()
+            v = v.strip().strip('"').strip("'")
+            if k and k not in os.environ:
+                os.environ[k] = v
 
 
 def collect_segments(episode: dict) -> list[dict]:
@@ -192,11 +196,17 @@ def chars_to_words(alignment: dict, offset_sec: float = 0.0) -> list[dict]:
     return words
 
 
-def generate_elevenlabs_beat(text: str, out_mp3: Path, voice_id: str, api_key: str) -> tuple[float, list[dict]]:
+def generate_elevenlabs_beat(
+    text: str,
+    out_mp3: Path,
+    voice_id: str,
+    api_key: str,
+    model_id: str = "eleven_multilingual_v2",
+) -> tuple[float, list[dict]]:
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/with-timestamps"
     payload = json.dumps({
         "text": text,
-        "model_id": "eleven_multilingual_v2",
+        "model_id": model_id,
         "voice_settings": {"stability": 0.45, "similarity_boost": 0.78, "style": 0.35, "use_speaker_boost": True},
     }).encode("utf-8")
     req = urllib.request.Request(url, data=payload, headers={"xi-api-key": api_key, "Content-Type": "application/json"}, method="POST")
@@ -211,12 +221,37 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Generate natural Indonesian VO + words.json")
     parser.add_argument("episode_dir", help="Path to episode directory containing episode.json")
-    parser.add_argument("--provider", choices=["gemini", "edge", "elevenlabs"], default="edge")
-    parser.add_argument("--voice", default="id-ID-ArdiNeural", help="Voice name: Edge (id-ID-ArdiNeural/id-ID-GadisNeural), Gemini (Puck/Kore/Charon), or ElevenLabs voice ID")
+    parser.add_argument("--tier", choices=["free", "paid"], default=None,
+                        help="Shortcut: free = Gemini TTS, paid = ElevenLabs TTS")
+    parser.add_argument("--provider", choices=["gemini", "edge", "elevenlabs"], default=None,
+                        help="Explicit TTS provider (overrides default if --tier is not set)")
+    parser.add_argument("--model", default="eleven_multilingual_v2",
+                        help="ElevenLabs model_id (e.g. eleven_multilingual_v2 or eleven_flash_v2_5)")
+    parser.add_argument("--voice", default=None,
+                        help="Voice name: Gemini (Puck/Kore/Charon), Edge (id-ID-ArdiNeural), or ElevenLabs voice ID")
     parser.add_argument("--rate", default="+6%", help="Edge TTS speech rate adjustment (e.g. +6%, +0%)")
     parser.add_argument("--whisper-model", default="small", help="faster-whisper model size (tiny, base, small, medium)")
+    parser.add_argument("--force", action="store_true", help="Regenerate beats even if cached MP3 exists")
     parser.add_argument("--sync-durations", action="store_true", default=True, help="Auto-update beat durations in episode.json to match real VO")
     args = parser.parse_args()
+
+    # Resolve provider from --tier (free -> gemini, paid -> elevenlabs) or --provider (default: gemini)
+    if args.tier == "paid":
+        provider = "elevenlabs"
+    elif args.tier == "free":
+        provider = "gemini"
+    elif args.provider:
+        provider = args.provider
+    else:
+        provider = "gemini"
+
+    if not args.voice:
+        if provider == "gemini":
+            args.voice = "Puck"
+        elif provider == "elevenlabs":
+            args.voice = os.environ.get("ELEVENLABS_VOICE_ID", "wvv6DzcHyOVTDgDY7SMW")  # Andi - Clear and confident
+        else:
+            args.voice = "id-ID-ArdiNeural"
 
     ep_dir = Path(args.episode_dir).resolve()
     ep_json = ep_dir / "episode.json"
@@ -229,12 +264,26 @@ def main() -> None:
     beats_dir.mkdir(parents=True, exist_ok=True)
 
     segments = collect_segments(episode)
+    total_chars = sum(
+        len((b.get("narration") or "").strip())
+        for seg in segments
+        for b in seg["beats"]
+    )
+    if provider == "elevenlabs":
+        mult = 0.5 if ("flash" in args.model or "turbo" in args.model) else 1.0
+        est_credits = int(round(total_chars * mult))
+        print(f"[TTS] Tier=PAID (ElevenLabs) | model={args.model} | voice={args.voice} | {total_chars} chars (~{est_credits} credits)", flush=True)
+    elif provider == "gemini":
+        print(f"[TTS] Tier=FREE (Gemini TTS) | voice={args.voice} | {total_chars} chars (0 ElevenLabs credits)", flush=True)
+    else:
+        print(f"[TTS] Provider=Edge | voice={args.voice} | {total_chars} chars", flush=True)
+
     all_words = []
     all_beat_mp3s = []
     cursor = 0.0
 
-    if args.provider == "gemini":
-        api_key = os.environ.get("GEMINI_API_KEY")
+    if provider == "gemini":
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             sys.exit("Missing GEMINI_API_KEY. Set it in .env or export GEMINI_API_KEY=...")
 
@@ -258,7 +307,7 @@ def main() -> None:
                     cursor += float(beat.get("duration", 4))
                     continue
                 beat_mp3 = beats_dir / f"{seg['id']}_b{b_idx:02d}.mp3"
-                if beat_mp3.exists() and beat_mp3.stat().st_size > 1000:
+                if not args.force and beat_mp3.exists() and beat_mp3.stat().st_size > 1000:
                     print(f"  [Cached] {seg['id']} beat {b_idx}")
                     dur = probe_duration(beat_mp3)
                 else:
@@ -276,7 +325,7 @@ def main() -> None:
                 seg_out = audio_dir / f"vo_{seg['id']}.mp3"
                 concat_mp3s(seg_mp3s, seg_out)
 
-    elif args.provider == "edge":
+    elif provider == "edge":
         from faster_whisper import WhisperModel
 
         print(f"Loading faster-whisper ({args.whisper_model}) for Indonesian word-level timestamps...")
@@ -290,7 +339,7 @@ def main() -> None:
                     cursor += float(beat.get("duration", 4))
                     continue
                 beat_mp3 = beats_dir / f"{seg['id']}_b{b_idx:02d}.mp3"
-                if beat_mp3.exists() and beat_mp3.stat().st_size > 1000:
+                if not args.force and beat_mp3.exists() and beat_mp3.stat().st_size > 1000:
                     print(f"  [Cached] {seg['id']} beat {b_idx}")
                     dur = probe_duration(beat_mp3)
                 else:
@@ -312,7 +361,7 @@ def main() -> None:
         api_key = os.environ.get("ELEVENLABS_API_KEY")
         if not api_key:
             sys.exit("Missing ELEVENLABS_API_KEY. Set it in .env or export ELEVENLABS_API_KEY=...")
-        voice_id = os.environ.get("ELEVENLABS_VOICE_ID", args.voice)
+        voice_id = args.voice
 
         for seg in segments:
             seg_mp3s = []
@@ -322,8 +371,8 @@ def main() -> None:
                     cursor += float(beat.get("duration", 4))
                     continue
                 beat_mp3 = beats_dir / f"{seg['id']}_b{b_idx:02d}.mp3"
-                print(f"  [ElevenLabs] {seg['id']} beat {b_idx} ...")
-                dur, words = generate_elevenlabs_beat(narration, beat_mp3, voice_id, api_key)
+                print(f"  [ElevenLabs:{args.model}] {seg['id']} beat {b_idx} ...")
+                dur, words = generate_elevenlabs_beat(narration, beat_mp3, voice_id, api_key, args.model)
                 for w in words:
                     all_words.append({
                         "word": w["word"],
