@@ -1,4 +1,6 @@
+import fs from "node:fs";
 import path from "node:path";
+import { spawn } from "node:child_process";
 import dotenv from "dotenv";
 import { PROJECT_ROOT } from "./store.js";
 
@@ -18,90 +20,212 @@ async function callGemini(prompt, systemPrompt) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const models = [
+    ...new Set([process.env.GEMINI_MODEL?.trim(), "gemini-2.5-flash", "gemini-2.5-flash-lite"].filter(Boolean)),
+  ];
+  let lastErr = "Gemini failed";
 
-  const body = {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.75,
-      responseMimeType: "application/json",
-    },
-  };
-  if (systemPrompt) {
-    body.systemInstruction = { parts: [{ text: systemPrompt }] };
-  }
+  for (const model of models) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const body = {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.75,
+        responseMimeType: "application/json",
+      },
+    };
+    if (systemPrompt) {
+      body.systemInstruction = { parts: [{ text: systemPrompt }] };
+    }
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-  if (!res.ok) {
+    if (res.ok) {
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error("Gemini returned empty response");
+      return { parsed: parseJsonResponse(text), provider: `gemini:${model}` };
+    }
+
     const errText = await res.text();
-    throw new Error(`Gemini HTTP ${res.status}: ${errText.slice(0, 200)}`);
+    lastErr = `Gemini (${model}) HTTP ${res.status}: ${errText.slice(0, 180)}`;
+    // If billing/auth error (401/403), no point retrying other Gemini models
+    if (res.status === 401 || res.status === 403) break;
   }
 
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Gemini returned empty response");
-  return { parsed: parseJsonResponse(text), provider: `gemini:${model}` };
+  throw new Error(lastErr);
+}
+
+async function listGroqChatModels(apiKey) {
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const excludeRe = /whisper|guard|tts|speech|embed|moderation|safeguard|orpheus|playai|allam/i;
+    return (data.data || [])
+      .map((m) => m.id)
+      .filter((id) => id && !excludeRe.test(id));
+  } catch {
+    return [];
+  }
 }
 
 async function callGroq(prompt, systemPrompt) {
   const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) throw new Error("GROQ_API_KEY not configured");
 
-  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
   const messages = [];
   if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
   messages.push({ role: "user", content: prompt });
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.75,
-      response_format: { type: "json_object" },
-    }),
-  });
+  const preferred = [
+    process.env.GROQ_MODEL?.trim(),
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b",
+  ].filter(Boolean);
 
-  if (!res.ok) {
+  // Discover live models on the user's Groq account so we never fail on deprecated IDs
+  const liveModels = await listGroqChatModels(apiKey);
+  const candidates = liveModels.length > 0
+    ? [
+        ...preferred.filter((m) => liveModels.includes(m)),
+        ...liveModels.filter((m) => !preferred.includes(m)),
+      ]
+    : [...new Set(preferred)];
+
+  let lastErr = "Groq failed";
+  for (const model of candidates.slice(0, 6)) {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.75,
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content;
+      if (!text) throw new Error("Groq returned empty response");
+      return { parsed: parseJsonResponse(text), provider: `groq:${model}` };
+    }
+
     const errText = await res.text();
-    throw new Error(`Groq HTTP ${res.status}: ${errText.slice(0, 200)}`);
+    lastErr = `Groq (${model}) HTTP ${res.status}: ${errText.slice(0, 180)}`;
+    if (res.status === 401 || res.status === 403) break;
   }
 
-  const data = await res.json();
-  const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error("Groq returned empty response");
-  return { parsed: parseJsonResponse(text), provider: `groq:${model}` };
+  throw new Error(lastErr);
+}
+
+const AGY_TIMEOUT_MS = Number(process.env.AGY_TIMEOUT_MS || 240_000);
+
+function resolveAgyBin() {
+  if (process.env.AGY_BIN?.trim()) return process.env.AGY_BIN.trim();
+  const exe = process.platform === "win32" ? "agy.exe" : "agy";
+  const local = process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, "agy", "bin", exe) : null;
+  if (local && fs.existsSync(local)) return local;
+  return "agy";
 }
 
 /**
- * Gemini primary + automatic fallback to Groq.
+ * Antigravity CLI headless (`agy -p`) — memakai kuota langganan Google,
+ * tanpa API key. Output dibungkus: { status, response: "<json string>" }.
  */
-export async function generateJson(prompt, systemPrompt = "") {
-  const errors = [];
-  try {
-    return await callGemini(prompt, systemPrompt);
-  } catch (e) {
-    errors.push(e.message);
+async function callAntigravity(prompt, systemPrompt) {
+  const bin = resolveAgyBin();
+  const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+  const args = [
+    "-p",
+    fullPrompt,
+    "--output-format",
+    "json",
+    "--print-timeout",
+    `${Math.round(AGY_TIMEOUT_MS / 1000)}s`,
+  ];
+  if (process.env.AGY_MODEL?.trim()) args.push("--model", process.env.AGY_MODEL.trim());
+
+  const raw = await new Promise((resolve, reject) => {
+    const child = spawn(bin, args, { cwd: PROJECT_ROOT, windowsHide: true });
+    let out = "";
+    let err = "";
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error(`Antigravity timeout ${AGY_TIMEOUT_MS}ms`));
+    }, AGY_TIMEOUT_MS + 15_000);
+    child.stdout.on("data", (d) => (out += d));
+    child.stderr.on("data", (d) => (err += d));
+    child.on("error", (e) => {
+      clearTimeout(timer);
+      reject(new Error(`Antigravity CLI gagal dijalankan (${bin}): ${e.message}`));
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (code !== 0) {
+        reject(new Error(`Antigravity exit ${code}: ${(err || out).slice(0, 180)}`));
+        return;
+      }
+      resolve(out);
+    });
+  });
+
+  const envelope = parseJsonResponse(raw);
+  if (envelope?.status && envelope.status !== "SUCCESS") {
+    throw new Error(`Antigravity status ${envelope.status}: ${String(envelope.response || "").slice(0, 180)}`);
+  }
+  const text = typeof envelope === "string" ? envelope : envelope?.response;
+  if (!text) throw new Error("Antigravity returned empty response");
+  return { parsed: parseJsonResponse(text), provider: "antigravity:agy" };
+}
+
+/**
+ * Urutan provider: AI_PROVIDER_ORDER (default antigravity,groq,gemini),
+ * atau pilih eksplisit via options.provider ("antigravity" | "gemini" | "groq" | "auto").
+ */
+export async function generateJson(prompt, systemPrompt = "", options = {}) {
+  const providers = { antigravity: callAntigravity, groq: callGroq, gemini: callGemini };
+  const requested = (options.provider || "auto").trim().toLowerCase();
+
+  if (requested && requested !== "auto") {
+    const fn = providers[requested];
+    if (!fn) throw new Error(`Provider tidak dikenal: ${requested}`);
+    return await fn(prompt, systemPrompt);
   }
 
-  try {
-    return await callGroq(prompt, systemPrompt);
-  } catch (e) {
-    errors.push(e.message);
+  const order = (process.env.AI_PROVIDER_ORDER || "antigravity,groq,gemini")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  const errors = [];
+  for (const name of order) {
+    const fn = providers[name];
+    if (!fn) {
+      errors.push(`${name}: provider tidak dikenal`);
+      continue;
+    }
+    try {
+      return await fn(prompt, systemPrompt);
+    } catch (e) {
+      errors.push(`${name}: ${e.message}`);
+    }
   }
 
   throw new Error(
-    `Semua AI provider gagal (${errors.join(" | ")}). Pastikan GEMINI_API_KEY atau GROQ_API_KEY sudah diisi di ai-vid-gen/.env`
+    `Semua AI provider gagal (${errors.join(" | ")}). Cek AGY_BIN / GROQ_API_KEY / AI_PROVIDER_ORDER di ai-vid-gen/.env`
   );
 }
 
@@ -171,6 +295,66 @@ Balas HANYA dengan JSON valid mengikuti skema ini:
   return generateJson(prompt, "Kamu adalah scriptwriter & visual director untuk channel edukasi sains 3D. Pastikan output JSON valid dan rapi.");
 }
 
+/**
+ * Kombinasikan Title dengan #Tags persis seperti Clipper AI:
+ * [Judul Catchy + Emojis] [#fyp #viral #foryou #foryoupage #Shorts ...]
+ * Dipotong rapi di spasi terakhir sebelum batas maxLen (YouTube limit 100 char).
+ */
+export function combineShortsTitle(baseTitle, rawHashtags = [], maxLen = 100) {
+  if (!baseTitle && (!rawHashtags || rawHashtags.length === 0)) return "";
+  // Bersihkan hashtag yang mungkin sudah ada di baseTitle agar tidak duplikat
+  const cleanTitle = String(baseTitle || "")
+    .replace(/#[\w\d_]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const tags = (Array.isArray(rawHashtags) ? rawHashtags : [])
+    .map((t) => (t.startsWith("#") ? t : `#${t}`))
+    .filter(Boolean);
+
+  // Pastikan #Shorts ada di daftar
+  if (!tags.some((t) => t.toLowerCase() === "#shorts")) {
+    tags.push("#Shorts");
+  }
+
+  const tagsStr = tags.join(" ");
+  let fullText = `${cleanTitle} ${tagsStr}`.trim();
+
+  if (fullText.length > maxLen) {
+    fullText = fullText.substring(0, maxLen);
+    const originalNextChar = `${cleanTitle} ${tagsStr}`.charAt(maxLen);
+    if (originalNextChar !== " " && originalNextChar !== "") {
+      const lastSpaceIndex = fullText.lastIndexOf(" ");
+      if (lastSpaceIndex > 0) {
+        fullText = fullText.substring(0, lastSpaceIndex);
+      }
+    }
+  }
+
+  return fullText.trim() || cleanTitle;
+}
+
+export function formatHashtagsAndTags(rawHashtags = [], rawTags = []) {
+  let hashtags = (Array.isArray(rawHashtags) ? rawHashtags : [])
+    .map((h) => String(h).trim().toLowerCase())
+    .filter(Boolean)
+    .map((h) => (h.startsWith("#") ? h : `#${h}`));
+
+  // Tags diambil dari hashtags tanpa '#' lalu disortir alfabetis (persis Clipper AI)
+  let tags = hashtags.map((h) => h.replace(/^#/, "").trim()).filter(Boolean);
+
+  if (tags.length === 0 && Array.isArray(rawTags)) {
+    tags = rawTags
+      .map((t) => String(t).replace(/^#/, "").trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  tags = [...new Set(tags)].sort();
+  hashtags = [...new Set(hashtags)];
+
+  return { hashtags, tags };
+}
+
 export async function polishVideoMetadata({
   kind = "short",
   title,
@@ -179,43 +363,100 @@ export async function polishVideoMetadata({
   narrationContext = "",
   instruction = "",
   channelName = "Sains 60 Detik",
+  provider = "auto",
 }) {
   const isLong = kind === "long";
-  const customNote = instruction ? `\nInstruksi revisi khusus dari user: "${instruction}"` : "";
+  const customNote = instruction
+    ? `\nInstruksi revisi khusus dari user (WAJIB diprioritaskan): "${instruction}"`
+    : "";
 
-  const prompt = isLong
-    ? `Kamu adalah YouTube Strategist & SEO specialist untuk channel edukasi sains Bahasa Indonesia "${channelName}".
-Revisi & polish metadata untuk VIDEO LONG-FORM (16:9) berikut agar CTR tinggi, jelas, dan SEO-friendly.
+  let prompt = "";
+  if (isLong) {
+    prompt = `You are a world-class viral YouTube Strategist & SEO Copywriter for high-retention long-form educational videos (like Veritasium, Kurzgesagt, and Kok Bisa) in Bahasa Indonesia.
 
-Data saat ini:
-- Title: ${title}
-- Description: ${description}
-- Tags: ${Array.isArray(tags) ? tags.join(", ") : tags}
-- Konteks isi video: ${narrationContext}${customNote}
+Details:
+- Video Context / Narration: ${narrationContext || description || title || "Edukasi sains"}
+- Current Title: "${title || "Unknown"}"
+- Channel Name: "${channelName || "Sains 60 Detik"}"
+- Language: Bahasa Indonesia${customNote}
 
-Aturan:
-1. title: menarik, high-CTR, Bahasa Indonesia, TANPA hashtag, maksimal 95 karakter.
-2. description: informatif, hook kuat di 2 baris pertama, pertahankan bagian Chapters (timestamp 00:00 ...) jika sudah ada di deskripsi sebelumnya, tambahkan CTA komentar, dan akhiri dengan 4-6 hashtag relevan (JANGAN masukkan #Shorts). Maksimal 4500 karakter.
-3. tags: array 10-18 keyword SEO YouTube Bahasa Indonesia tanpa tanda #.
+Your task: Generate an exceptional, viral YouTube Long-Form video metadata package. ALL output MUST be in Bahasa Indonesia.
 
-Balas HANYA dengan JSON valid:
-{"title":"...","description":"...","tags":["tag1","tag2"]}`
-    : `Kamu adalah viral content strategist YouTube Shorts untuk channel edukasi sains Bahasa Indonesia "${channelName}".
-Revisi & polish metadata untuk YOUTUBE SHORT (9:16) berikut agar bikin penonton berhenti scroll dan lanjut nonton video lengkapnya.
+Generate:
+1. **suggestedTitle**: An extremely catchy, clickbait YouTube title that is highly relevant to the specific content. DO NOT include ANY hashtags in the title. The suggestedTitle length MUST be strictly under 95 characters. Use power words, emojis, curiosity gaps, and counter-intuitive facts (mitos vs fakta) to make people STOP scrolling. DO NOT put numbers at the beginning of the title.
+2. **suggestedDescription**: An extremely comprehensive, SEO-optimized, and highly engaging caption (up to 4500 characters). Follow this exact storytelling structure:
+   - Paragraph 1: An immersive, vivid hook / imagination opener with emojis to immediately grab curiosity.
+   - Paragraph 2-3: Deep dive story context, the tension, and the surprising scientific revelation/evidence explained with clear, engaging prose and emojis.
+   - Paragraph 4: Takeaway / mind-opening reflection on why this matters to our daily lives.
+   - Paragraph 5 (Interaction): An engaging question to spark debate/discussion in the comment section (e.g. "Menurut kamu... ? Tulis di kolom komentar ya! 🤔👇").
+   - Paragraph 6 (CTA): A high-conversion call-to-action (e.g. "Jangan lupa LIKE, SHARE, dan SUBSCRIBE untuk fakta sains unik dan mencengangkan lainnya setiap hari! 🔔✨").
+   - Paragraph 7 (Source): Exactly "Source : ${channelName}"
+   DO NOT append the hashtags block inside suggestedDescription (hashtags will be joined automatically).
+3. **hashtags**: Array of AS MANY strategic hashtags as possible based on the video content and SEO keywords (25-35 tags). DO NOT include hashtags for the speaker's name or channel name. Mix with mega-viral tags (#fyp #viral #foryou #foryoupage #trending) and hyper-niche specific science/educational tags. All lowercase with # prefix. DO NOT include #Shorts for Long-Form.
 
-Data saat ini:
-- Title: ${title}
-- Description: ${description}
-- Tags: ${Array.isArray(tags) ? tags.join(", ") : tags}
-- Konteks isi Short: ${narrationContext}${customNote}
+Respond ONLY with valid JSON, no markdown, no code blocks:
+{"suggestedTitle":"...","suggestedDescription":"...","hashtags":["#tag1","#tag2"]}`;
+  } else {
+    // ── SHORTS: Mirroring Clipper AI's exact prompt & viral formula ──
+    prompt = `You are a viral content strategist for TikTok, Reels, and YouTube Shorts.
 
-Aturan:
-1. title: punchy, bikin penasaran, Bahasa Indonesia, TANPA hashtag, maksimal 90 karakter.
-2. description: ringkas tapi menarik, pertahankan link YouTube video lengkap jika sudah ada di deskripsi sebelumnya, tambahkan CTA singkat, dan akhiri dengan hashtag yang WAJIB menyertakan #Shorts + #Sains60Detik + 4-6 hashtag niche.
-3. tags: array 10-15 keyword SEO tanpa tanda # (wajib sertakan "Shorts").
+I have a single video clip with the following details:
+- Clip Summary / Narration: ${narrationContext || description || title || "Edukasi sains"}
+- Current Title: "${title || "Unknown"}"
+- Channel/Speaker Name: "${channelName || "Sains 60 Detik"}"
+- Language: Bahasa Indonesia${customNote}
 
-Balas HANYA dengan JSON valid:
-{"title":"...","description":"...","tags":["Shorts","tag2"]}`;
+Your task: Generate a BETTER, viral caption for this clip. ALL output MUST be in Bahasa Indonesia.
 
-  return generateJson(prompt, "Respon hanya JSON valid tanpa markdown.");
+Generate:
+1. **suggestedTitle**: An extremely catchy, clickbait TikTok/Reels title that is highly relevant to the specific content. DO NOT include ANY hashtags in the title. The suggestedTitle length MUST be strictly under 100 characters. Use power words, emojis, controversy, SEO keywords, and curiosity gaps to make people STOP scrolling. DO NOT put numbers at the beginning of the title.
+2. **suggestedDescription**: An extremely comprehensive, SEO-optimized, and highly engaging caption. Make it as long and detailed as possible, up to a maximum of 4000 characters. Follow this exact viral storytelling structure:
+   - Paragraph 1: An immersive, vivid hook / imagination opener with emojis to immediately hook viewers.
+   - Paragraph 2: Story context, tension, and the shocking factual twist or scientific revelation explained with emojis.
+   - Paragraph 3: Reflection on human behavior / modern life context.
+   - Paragraph 4 (Interaction): A provocative question to ignite passionate comments and debate (e.g. "Menurut kamu... ? Tulis di kolom komentar ya! 🤔👇").
+   - Paragraph 5 (CTA): Strong CTA (e.g. "Jangan lupa LIKE, SHARE, dan SUBSCRIBE untuk fakta sains unik dan mencengangkan lainnya setiap hari! 🔔✨").
+   - Paragraph 6 (Source): Exactly "Source : ${channelName}"
+   DO NOT append the hashtags block inside suggestedDescription (hashtags will be appended automatically).
+3. **hashtags**: Array of AS MANY strategic hashtags as possible based on the video content and SEO keywords. Do not limit to 30; generate a massive list (25-35 tags). DO NOT include hashtags for the speaker's name or channel name. Mix with mega-viral tags (#fyp #viral #foryou #foryoupage #trending #Shorts) and hyper-niche specific tags. All lowercase with # prefix.
+
+Respond ONLY with valid JSON, no markdown, no code blocks:
+{"suggestedTitle":"...","suggestedDescription":"...","hashtags":["#tag1","#tag2"]}`;
+  }
+
+  const { parsed, provider: usedProvider } = await generateJson(
+    prompt,
+    "You are an expert viral Indonesian YouTube copywriter & SEO strategist. Output ONLY valid JSON.",
+    { provider }
+  );
+
+  const baseTitle = parsed.suggestedTitle || parsed.title || title;
+  const rawDesc = parsed.suggestedDescription || parsed.description || description;
+  const { hashtags, tags: sortedTags } = formatHashtagsAndTags(parsed.hashtags, parsed.tags || tags);
+
+  // 1. Title format: Untuk Shorts gabungkan Judul + #Tags strictly <= 100 chars (seperti Clipper AI)
+  const finalTitle = isLong
+    ? String(baseTitle).slice(0, 100)
+    : combineShortsTitle(baseTitle, hashtags, 100);
+
+  // 2. Description format: Storytelling + Source + Block Hashtags di bagian bawah
+  let finalDesc = String(rawDesc || "").trim();
+  if (!finalDesc.includes("Source :")) {
+    finalDesc += `\n\nSource : ${channelName}`;
+  }
+  if (hashtags.length > 0 && !finalDesc.includes(hashtags[0])) {
+    finalDesc += `\n\n${hashtags.join(" ")}`;
+  }
+
+  return {
+    parsed: {
+      title: finalTitle,
+      description: finalDesc,
+      tags: sortedTags,
+      hashtags,
+      suggestedTitle: baseTitle,
+      suggestedDescription: rawDesc,
+    },
+    provider: usedProvider,
+  };
 }

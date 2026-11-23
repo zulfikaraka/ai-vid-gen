@@ -5,7 +5,7 @@ import { getEpisode, saveVideoMetadata } from "@/lib/store";
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { episodeId, kind, moduleId, title, description, tags, instruction, channelName } = body;
+    const { episodeId, kind, moduleId, title, description, tags, instruction, channelName, provider = "auto" } = body;
     if (!episodeId || !kind) {
       return NextResponse.json({ error: "episodeId dan kind wajib diisi" }, { status: 400 });
     }
@@ -28,7 +28,7 @@ export async function POST(request) {
       narrationContext = (mod?.beats || []).map((b) => b.narration).filter(Boolean).join(" ");
     }
 
-    const { parsed, provider } = await polishVideoMetadata({
+    const { parsed, provider: usedProvider } = await polishVideoMetadata({
       kind,
       title,
       description,
@@ -36,12 +36,14 @@ export async function POST(request) {
       narrationContext: narrationContext.slice(0, 2000),
       instruction,
       channelName: channelName || "Sains 60 Detik",
+      provider,
     });
 
     const updatedEpisode = saveVideoMetadata(episodeId, kind, moduleId, {
       title: parsed.title || title,
       description: parsed.description || description,
       tags: Array.isArray(parsed.tags) ? parsed.tags : tags,
+      hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : undefined,
     });
 
     return NextResponse.json({
@@ -49,8 +51,9 @@ export async function POST(request) {
         title: parsed.title || title,
         description: parsed.description || description,
         tags: Array.isArray(parsed.tags) ? parsed.tags : tags,
+        hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : undefined,
       },
-      provider,
+      provider: usedProvider,
       episode: updatedEpisode,
     });
   } catch (err) {

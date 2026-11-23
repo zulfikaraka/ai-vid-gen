@@ -350,7 +350,7 @@ export function saveEpisode(rawId, episodeObj) {
   return getEpisode(id);
 }
 
-export function saveVideoMetadata(rawId, kind, moduleId, { title, description, tags }) {
+export function saveVideoMetadata(rawId, kind, moduleId, { title, description, tags, hashtags }) {
   const id = safeId(rawId);
   const epJsonPath = path.join(EPISODES_DIR, id, "episode.json");
   if (!fs.existsSync(epJsonPath)) throw new Error(`Episode not found: ${id}`);
@@ -363,6 +363,10 @@ export function saveVideoMetadata(rawId, kind, moduleId, { title, description, t
         .map((t) => t.trim())
         .filter(Boolean);
 
+  const cleanHashtags = Array.isArray(hashtags)
+    ? hashtags.map((h) => String(h).trim()).filter(Boolean)
+    : undefined;
+
   if (kind === "long") {
     episode.youtube = episode.youtube || {};
     episode.youtube.long = {
@@ -370,6 +374,7 @@ export function saveVideoMetadata(rawId, kind, moduleId, { title, description, t
       title: String(title || "").slice(0, 100),
       description: String(description || "").slice(0, 5000),
       tags: cleanTags,
+      ...(cleanHashtags ? { hashtags: cleanHashtags } : {}),
     };
   } else {
     const mod = (episode.modules || []).find((m) => m.id === moduleId);
@@ -379,6 +384,7 @@ export function saveVideoMetadata(rawId, kind, moduleId, { title, description, t
       title: String(title || "").slice(0, 100),
       description: String(description || "").slice(0, 5000),
       tags: cleanTags,
+      ...(cleanHashtags ? { hashtags: cleanHashtags } : {}),
     };
   }
 

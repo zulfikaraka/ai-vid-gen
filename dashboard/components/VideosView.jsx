@@ -60,6 +60,7 @@ export default function VideosView({ episodes, accounts, onRefresh, onToast }) {
   const [description, setDescription] = useState("");
   const [tagsText, setTagsText] = useState("");
   const [polishInstruction, setPolishInstruction] = useState("");
+  const [polishProvider, setPolishProvider] = useState("auto"); // "auto" | "gemini" | "groq"
   const [polishing, setPolishing] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -153,6 +154,7 @@ export default function VideosView({ episodes, accounts, onRefresh, onToast }) {
             .filter(Boolean),
           instruction: polishInstruction,
           channelName: chName,
+          provider: polishProvider,
         }),
       });
       const data = await res.json();
@@ -368,18 +370,60 @@ export default function VideosView({ episodes, accounts, onRefresh, onToast }) {
             <div className="drawer-body">
               {/* Local Video Preview */}
               {selected.videoFile ? (
-                <div style={{ background: "#050914", borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)" }}>
+                <div
+                  style={{
+                    flexShrink: 0,
+                    background: "#050914",
+                    borderRadius: 10,
+                    border: "1px solid var(--border)",
+                    padding: 10,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
                   <video
+                    id="detail-video-player"
                     key={selected.key}
                     controls
+                    playsInline
+                    preload="metadata"
                     src={`/api/media/${selected.episodeId}/${selected.videoFile}`}
                     style={{
                       width: "100%",
-                      maxHeight: selected.kind === "short" ? 360 : 280,
+                      height: selected.kind === "short" ? 440 : 380,
+                      objectFit: "contain",
                       display: "block",
                       background: "#000",
+                      borderRadius: 6,
                     }}
                   />
+                  <div className="space-between" style={{ fontSize: 12, color: "var(--muted)" }}>
+                    <span>
+                      {selected.videoFile} · {(selected.videoSize / (1024 * 1024)).toFixed(1)} MB
+                    </span>
+                    <div className="row" style={{ gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        onClick={() => {
+                          const v = document.getElementById("detail-video-player");
+                          if (v?.requestFullscreen) v.requestFullscreen();
+                        }}
+                      >
+                        Fullscreen
+                      </button>
+                      <a
+                        href={`/api/media/${selected.episodeId}/${selected.videoFile}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-sm"
+                        style={{ textDecoration: "none" }}
+                      >
+                        Buka Tab Baru <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="card-subtle" style={{ color: "#fca5a5" }}>
@@ -390,18 +434,29 @@ export default function VideosView({ episodes, accounts, onRefresh, onToast }) {
               {/* AI Polish Bar */}
               <div className="card-subtle" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div className="space-between">
-                  <span style={{ fontWeight: 600, fontSize: 13 }}>✨ AI Polish (Gemini + Fallback Groq)</span>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>✨ AI Polish (Copywriting &amp; SEO)</span>
                   <span style={{ fontSize: 11.5, color: "var(--muted)" }}>
                     Revisi otomatis Title, Description &amp; Tags
                   </span>
                 </div>
                 <div className="row">
                   <input
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minWidth: 200 }}
                     placeholder="Instruksi revisi opsional (mis: buat lebih penasaran, tambah hashtag baterai HP)..."
                     value={polishInstruction}
                     onChange={(e) => setPolishInstruction(e.target.value)}
                   />
+                  <select
+                    value={polishProvider}
+                    onChange={(e) => setPolishProvider(e.target.value)}
+                    title="Pilih AI Provider"
+                    style={{ width: 155 }}
+                  >
+                    <option value="auto">Auto (Default)</option>
+                    <option value="antigravity">Antigravity</option>
+                    <option value="gemini">Gemini</option>
+                    <option value="groq">Groq</option>
+                  </select>
                   <button className="btn btn-polish" onClick={handlePolish} disabled={polishing}>
                     <Sparkles size={14} /> {polishing ? "Polishing..." : "Polish"}
                   </button>
