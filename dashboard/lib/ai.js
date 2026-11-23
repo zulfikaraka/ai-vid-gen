@@ -300,7 +300,7 @@ Balas HANYA dengan JSON valid mengikuti skema ini:
  * [Judul Catchy + Emojis] [#fyp #viral #foryou #foryoupage #Shorts ...]
  * Dipotong rapi di spasi terakhir sebelum batas maxLen (YouTube limit 100 char).
  */
-export function combineShortsTitle(baseTitle, rawHashtags = [], maxLen = 100) {
+export function combineTitleWithHashtags(baseTitle, rawHashtags = [], maxLen = 100, isShorts = false) {
   if (!baseTitle && (!rawHashtags || rawHashtags.length === 0)) return "";
   // Bersihkan hashtag yang mungkin sudah ada di baseTitle agar tidak duplikat
   const cleanTitle = String(baseTitle || "")
@@ -312,12 +312,22 @@ export function combineShortsTitle(baseTitle, rawHashtags = [], maxLen = 100) {
     .map((t) => (t.startsWith("#") ? t : `#${t}`))
     .filter(Boolean);
 
-  // Pastikan #Shorts ada di daftar
-  if (!tags.some((t) => t.toLowerCase() === "#shorts")) {
-    tags.push("#Shorts");
+  // Daftar tag viral prioritas utama agar judul selalu memuat tag viral di depan
+  const viralLeadTags = isShorts
+    ? ["#fyp", "#viral", "#foryou", "#foryoupage", "#trending", "#Shorts"]
+    : ["#fyp", "#viral", "#foryou", "#foryoupage", "#trending"];
+
+  const seen = new Set();
+  const prioritized = [];
+  for (const t of [...viralLeadTags, ...tags]) {
+    const lower = t.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      prioritized.push(t);
+    }
   }
 
-  const tagsStr = tags.join(" ");
+  const tagsStr = prioritized.join(" ");
   let fullText = `${cleanTitle} ${tagsStr}`.trim();
 
   if (fullText.length > maxLen) {
@@ -333,6 +343,8 @@ export function combineShortsTitle(baseTitle, rawHashtags = [], maxLen = 100) {
 
   return fullText.trim() || cleanTitle;
 }
+
+export const combineShortsTitle = combineTitleWithHashtags;
 
 export function formatHashtagsAndTags(rawHashtags = [], rawTags = []) {
   let hashtags = (Array.isArray(rawHashtags) ? rawHashtags : [])
@@ -434,10 +446,8 @@ Respond ONLY with valid JSON, no markdown, no code blocks:
   const rawDesc = parsed.suggestedDescription || parsed.description || description;
   const { hashtags, tags: sortedTags } = formatHashtagsAndTags(parsed.hashtags, parsed.tags || tags);
 
-  // 1. Title format: Untuk Shorts gabungkan Judul + #Tags strictly <= 100 chars (seperti Clipper AI)
-  const finalTitle = isLong
-    ? String(baseTitle).slice(0, 100)
-    : combineShortsTitle(baseTitle, hashtags, 100);
+  // 1. Title format: gabungkan Judul + #Tags strictly <= 100 chars (persis Clipper AI)
+  const finalTitle = combineTitleWithHashtags(baseTitle, hashtags, 100, !isLong);
 
   // 2. Description format: Storytelling + Source + Block Hashtags di bagian bawah
   let finalDesc = String(rawDesc || "").trim();

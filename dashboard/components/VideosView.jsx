@@ -171,6 +171,55 @@ export default function VideosView({ episodes, accounts, onRefresh, onToast }) {
     }
   }
 
+  function handleCombineTitleTags() {
+    if (!title) return;
+    const isShorts = selected?.kind === "short";
+    const descTags = description.match(/#[\w\d_]+/g) || [];
+    const fromTags = tagsText
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .map((t) => (t.startsWith("#") ? t : `#${t}`));
+    const sourceHashtags = descTags.length > 0 ? descTags : fromTags;
+
+    const cleanTitle = title
+      .replace(/#[\w\d_]+/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const viralLeadTags = isShorts
+      ? ["#fyp", "#viral", "#foryou", "#foryoupage", "#trending", "#Shorts"]
+      : ["#fyp", "#viral", "#foryou", "#foryoupage", "#trending"];
+
+    const seen = new Set();
+    const prioritized = [];
+    for (const t of [...viralLeadTags, ...sourceHashtags]) {
+      const lower = t.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        prioritized.push(t);
+      }
+    }
+
+    const tagsStr = prioritized.join(" ");
+    let fullText = `${cleanTitle} ${tagsStr}`.trim();
+
+    if (fullText.length > 100) {
+      fullText = fullText.substring(0, 100);
+      const originalNextChar = `${cleanTitle} ${tagsStr}`.charAt(100);
+      if (originalNextChar !== " " && originalNextChar !== "") {
+        const lastSpaceIndex = fullText.lastIndexOf(" ");
+        if (lastSpaceIndex > 0) {
+          fullText = fullText.substring(0, lastSpaceIndex);
+        }
+      }
+    }
+
+    const resTitle = fullText.trim() || cleanTitle;
+    setTitle(resTitle);
+    onToast("✨ Judul + #Tags berhasil di-generate!");
+  }
+
   async function handleUpload() {
     if (!selected) return;
     if (!selected.videoFile) {
@@ -465,9 +514,20 @@ export default function VideosView({ episodes, accounts, onRefresh, onToast }) {
 
               {/* Editable Fields: Title, Description, Tags */}
               <div className="field">
-                <label>
-                  <span>Title</span>
-                  <span className="field-hint">{title.length}/100 karakter</span>
+                <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>Title (Judul + #Tags)</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={handleCombineTitleTags}
+                      title="Gabungkan judul saat ini dengan hashtag viral agar pas di bawah 100 karakter (seperti Clipper AI)"
+                      style={{ padding: "2px 8px", fontSize: 11, height: "auto" }}
+                    >
+                      ✨ Judul + #Tags
+                    </button>
+                    <span className="field-hint">{title.length}/100 karakter</span>
+                  </div>
                 </label>
                 <input
                   value={title}
