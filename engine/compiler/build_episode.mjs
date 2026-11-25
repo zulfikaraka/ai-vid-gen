@@ -134,6 +134,37 @@ function renderProceduralVisual(proc, format) {
       .join("");
     return `<div class="procedural-card">${rows}</div>`;
   }
+  if (proc.type === "viral_hook") {
+    const kicker = proc.kicker || "FAKTA TERSEMBUNYI";
+    const headline = proc.headline || "";
+    const highlight = proc.highlight || "";
+    const accentCls = proc.accent === "red" ? "accent-red" : proc.accent === "cyan" ? "accent-cyan" : "";
+    const strikes = (proc.strikeItems || [])
+      .map((s) => `<span class="viral-hook-chip">${esc(s)}</span>`)
+      .join("");
+    const strikesHtml = strikes ? `<div class="viral-hook-strikes">${strikes}</div>` : "";
+    const metricHtml = proc.metric
+      ? `<div class="viral-hook-metric">
+           <div class="viral-hook-metric-head">
+             <span>${esc(proc.metric.label || "LEVEL RISIKO")}</span>
+             <span style="color:${esc(proc.metric.color || "#ef4444")}">${esc(proc.metric.value || "")}</span>
+           </div>
+           <div class="stat-bar-track">
+             <div class="stat-bar-fill" style="width:${Number(proc.metric.percent || 85)}%;background:${esc(proc.metric.color || "linear-gradient(90deg,#facc15,#ef4444)")};"></div>
+           </div>
+         </div>`
+      : "";
+    return `
+      <div class="viral-hook-stage">
+        <div class="viral-hook-kicker"><span class="viral-hook-dot"></span>${esc(kicker)}</div>
+        <div class="viral-hook-headline">
+          ${esc(headline)}
+          ${highlight ? `<span class="viral-hook-highlight ${accentCls}">${esc(highlight)}</span>` : ""}
+        </div>
+        ${strikesHtml}
+        ${metricHtml}
+      </div>`;
+  }
   if (proc.type === "microscopic_surface") {
     const vb = format === "9:16" ? "0 0 1080 1920" : "0 0 1920 1080";
     const midY = format === "9:16" ? 960 : 540;
@@ -334,7 +365,32 @@ function buildCompositionHtml({ title, format, width, height, totalDuration, bea
 }
 
 const allSegments = [];
-if (episode.intro) allSegments.push({ id: "intro", kind: "intro", ...episode.intro });
+if (episode.intro && Array.isArray(episode.intro.beats) && episode.intro.beats.length > 0) {
+  allSegments.push({ id: "intro", kind: "intro", ...episode.intro });
+} else {
+  // Fallback auto-intro (100% free procedural viral hook) if episode.json has no intro beats
+  allSegments.push({
+    id: "intro",
+    kind: "intro",
+    beats: [
+      {
+        duration: 4.5,
+        theme: "cutaway",
+        narration: `Banyak orang masih salah kaprah soal ${episode.title || "topik ini"}. Mari kita bedah fakta sainsnya.`,
+        visual: {
+          kind: "procedural",
+          procedural: {
+            type: "viral_hook",
+            kicker: "SAINS 60 DETIK · INTRO",
+            headline: episode.title || "MITOS VS FAKTA SAINS",
+            highlight: "YANG SERING SALAH KAPRAH",
+            accent: "red",
+          },
+        },
+      },
+    ],
+  });
+}
 for (const mod of episode.modules || []) {
   allSegments.push({ kind: "module", ...mod });
 }
@@ -347,7 +403,7 @@ const words = realWords || buildEstimatedWords(allBeats);
 
 // 1. Long-Form 16:9 Master
 const longHtml = buildCompositionHtml({
-  title: episode.title || "Proof & Myth Episode",
+  title: episode.title || "Sains 60 Detik Episode",
   format: "16:9",
   width: 1920,
   height: 1080,
@@ -355,7 +411,7 @@ const longHtml = buildCompositionHtml({
   beats: allBeats,
   words,
   offsetStart: 0,
-  watermark: episode.watermark || "PROOF & MYTH",
+  watermark: episode.watermark || "SAINS 60 DETIK",
   audioSrc: episode.audio?.vo,
   bgmSrc: episode.audio?.bgm,
 });
@@ -375,7 +431,7 @@ for (const seg of timedSegments.filter((s) => s.kind === "module")) {
     beats: seg.beats,
     words,
     offsetStart: seg.absStart,
-    watermark: episode.watermark || "PROOF & MYTH",
+    watermark: episode.watermark || "SAINS 60 DETIK",
     audioSrc: seg.audio_vo || null,
     bgmSrc: episode.audio?.bgm,
   });

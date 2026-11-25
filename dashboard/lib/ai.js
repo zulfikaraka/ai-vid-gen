@@ -265,20 +265,27 @@ Angle: ${angle || title}
 ${mythText}
 
 Aturan ketat:
-1. Struktur terdiri dari:
-   - intro.beats: 2 beats (beat 1: still_3d studio, beat 2: veo_video cutaway)
+1. WAJIB ADA VIRAL HOOK INTRO di awal video (ikuti prinsip Viral Video Hook Strategist: STOP SCROLLING -> SPARK CURIOSITY -> BUILD SUSPENSE -> KEEP WATCHING):
+   - DILARANG membuka video dengan basa-basi generik ("Halo guys", "Selamat datang", "Di video kali ini...", "Jangan lupa subscribe...").
+   - Gunakan Curiosity Gap, Pattern Interrupt, Counterintuitive Statement, atau Open Loop yang 100% jujur sesuai fakta materi (jangan mengarang statistik/fakta, jangan bocorkan kesimpulan utama terlalu cepat).
+   - intro.beats WAJIB terdiri dari 3 beats (total 15-22 detik) untuk Long-Form 16:9:
+     * beat 1 (4.5-5.5 detik, Pattern Interrupt): WAJIB pakai visual procedural GRATIS type "viral_hook" dengan field procedural: { "type": "viral_hook", "kicker": "PERINGATAN / FAKTA TERSEMBUNYI", "headline": "teks hook singkat max 5 kata", "highlight": "punchline max 4 kata", "accent": "red", "strikeItems": ["BUKAN ..."], "metric": { "label": "...", "value": "...", "percent": 88, "color": "#ef4444" } }.
+     * beat 2 (5.0-6.5 detik, Mystery & Stakes): visual still_3d (studio/cutaway), membangun rasa penasaran atas mekanisme tersembunyi tanpa membocorkan jawaban lengkap.
+     * beat 3 (5.5-7.0 detik, Open Loop & Transition): visual veo_video cutaway dengan microscope: true, melempar pertanyaan pemantik lalu transisi mulus ke Mitos #1.
+2. Struktur modules & outro:
    - modules: tepat 3 modul (mod1_..., mod2_..., mod3_...), masing-masing 4 beats:
-     * beat 1: still_3d (hook mitos)
+     * beat 1 (4.5-6.0 detik, Short-Form Viral Hook 9:16): kalimat pertama HARUS langsung menghentikan scroll (pattern interrupt / shocking fact / pertanyaan kontroversial — tanpa sapaan), pakai still_3d atau procedural "viral_hook".
      * beat 2: veo_video (visual 3D mekanisme/bukti utama)
      * beat 3: still_3d atau veo_video (pendalaman mikroskopis)
      * beat 4: procedural (type: "stat_bars" dengan 2 items perbandingan mitos vs fakta)
    - outro.beats: 1 beat (veo_video penutup + CTA komentar)
-2. Total klip veo_video di seluruh episode HARUS 5 atau 6 klip saja (hemat kredit Google Flow Veo Fast), dan still_3d 5 atau 6 gambar.
-3. Setiap visual still_3d dan veo_video WAJIB memiliki field "prompt" (Bahasa Inggris, Cinema4D Octane 3D clean educational render, deep dark navy #0F172A untuk cutaway atau bright light-grey studio untuk studio, centered composition, no text, no watermark).
-4. Narasi tiap beat Bahasa Indonesia natural & conversational (15-28 kata per beat), duration estimasi 5.5 - 9.0 detik.
-5. Sertakan metadata SEO YouTube siap pakai:
+3. Total klip veo_video di seluruh episode HARUS 5 atau 6 klip saja (hemat kredit Google Flow Veo Fast), dan still_3d 5 atau 6 gambar. Manfaatkan procedural ("viral_hook" dan "stat_bars") agar 100% hemat kredit.
+4. Setiap visual still_3d dan veo_video WAJIB memiliki field "prompt" (Bahasa Inggris, Cinema4D Octane 3D clean educational render, deep dark navy #0F172A untuk cutaway atau bright light-grey studio untuk studio, centered composition, no text, no watermark).
+5. Narasi tiap beat Bahasa Indonesia natural & conversational (15-28 kata per beat), duration estimasi 4.5 - 9.0 detik.
+6. Sertakan metadata SEO YouTube siap pakai:
    - youtube.long: { title (<=95 char), description (ringkas + CTA), hashtags (tanpa #Shorts), tags }
    - di tiap module: youtube: { title (<=95 char), description, hashtags (wajib ada #Shorts), tags }
+7. Branding channel WAJIB menggunakan "SAINS 60 DETIK" (untuk watermark maupun badge kanan atas seperti "SAINS 60 DETIK #02"), JANGAN pernah menulis "PROOF & MYTH".
 
 Balas HANYA dengan JSON valid mengikuti skema ini:
 {
@@ -286,13 +293,13 @@ Balas HANYA dengan JSON valid mengikuti skema ini:
   "title": "${title}",
   "watermark": "SAINS 60 DETIK",
   "audio": { "vo": "audio/vo_master.mp3", "bgm": "audio/bgm.mp3" },
-  "intro": { "beats": [{ "duration": 6, "theme": "studio", "motion": "push-in", "narration": "...", "visual": { "kind": "still_3d", "src": "assets/stills/01_...", "prompt": "..." }, "chapter": { "line1": "...", "line2": "...", "accent": "red" } }] },
+  "intro": { "beats": [{ "duration": 5.0, "theme": "cutaway", "narration": "...", "visual": { "kind": "procedural", "procedural": { "type": "viral_hook", "kicker": "FAKTA TERSEMBUNYI", "headline": "...", "highlight": "...", "accent": "red", "strikeItems": ["..."], "metric": { "label": "...", "value": "...", "percent": 88, "color": "#ef4444" } } } }, { "duration": 6.0, "theme": "studio", "motion": "push-in", "narration": "...", "visual": { "kind": "still_3d", "src": "assets/stills/01_...", "prompt": "..." }, "chapter": { "line1": "...", "line2": "...", "accent": "red" } }, { "duration": 6.0, "theme": "cutaway", "microscope": true, "narration": "...", "visual": { "kind": "veo_video", "src": "assets/clips/01_...", "prompt": "..." }, "chapter": { "line1": "...", "line2": "...", "accent": "yellow" } }] },
   "modules": [{ "id": "mod1_...", "title": "...", "audio_vo": "audio/vo_mod1_....mp3", "youtube": { "title": "...", "description": "...", "hashtags": ["#Shorts","#Sains60Detik"], "tags": ["..."] }, "beats": [] }],
   "outro": { "beats": [] },
   "youtube": { "categoryId": "28", "long": { "title": "...", "description": "...", "hashtags": ["#Sains60Detik"], "tags": ["..."] } }
 }`;
 
-  return generateJson(prompt, "Kamu adalah scriptwriter & visual director untuk channel edukasi sains 3D. Pastikan output JSON valid dan rapi.");
+  return generateJson(prompt, "Kamu adalah Viral Video Hook Strategist, scriptwriter, dan visual director untuk channel edukasi sains 3D 'Sains 60 Detik'. Pastikan intro pembuka sangat kuat (tanpa basa-basi), jujur sesuai fakta, dan output JSON valid.");
 }
 
 /**

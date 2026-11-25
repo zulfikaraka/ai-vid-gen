@@ -1,4 +1,4 @@
-# Product Plan & Full-AI Production Architecture: Channel "Proof & Myth" (v2.0)
+# Product Plan & Full-AI Production Architecture: Channel "Sains 60 Detik" (v2.0)
 
 Dokumen ini adalah pembaruan final dari *Product Plan*, *Workflow*, dan *Requirements* yang disesuaikan dengan keputusanmu:
 1. **Niche:** General *Proof & Myth* (lintas topik: teknologi, sains sehari-hari, kesehatan, makanan, sejarah, fisika benda sekitar).
@@ -40,7 +40,7 @@ Karena kita memakai **HyperFrames**, kita punya keunggulan besar: **animasi kame
 
 ---
 
-## 3. Product Plan: General "Proof & Myth" & Dual-Format Reuse
+## 3. Product Plan: Channel "Sains 60 Detik" & Dual-Format Reuse
 
 ### 3.1 Pilar Topik General (Agar Konsisten Meski Lintas Bidang)
 Agar channel tidak terasa "campur aduk tanpa identitas" meski topiknya umum, kunci seluruh episode dalam **1 Formula Visual & Narasi**:

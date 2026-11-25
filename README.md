@@ -1,6 +1,6 @@
-# Proof & Myth — Full-AI Video Production Studio
+# Sains 60 Detik — Full-AI Video Production Studio
 
-Code-driven video studio untuk konten **Proof & Myth** di **YouTube (Long-Form 16:9 & Shorts 9:16)** serta **Facebook Pro Reels (9:16)**, terinspirasi gaya *3D Educational Explainer* (*Elevenbyte*).
+Code-driven video studio untuk channel **Sains 60 Detik** di **YouTube (Long-Form 16:9 & Shorts 9:16)** serta **Facebook Pro Reels (9:16)**, terinspirasi gaya *3D Educational Explainer* (*Elevenbyte*).
 
 ## Arsitektur Singkat
 1. **Single Source of Truth (`episode.json`)**: Satu naskah modular menghasilkan **1 video Long-Form (16:9)** dan **2–3 klip Short/Reel (9:16)** secara otomatis.

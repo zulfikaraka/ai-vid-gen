@@ -1,4 +1,4 @@
-# Google Flow Master Prompt Guide — Proof & Myth (3D Explainer Style)
+# Google Flow Master Prompt Guide — Sains 60 Detik (3D Explainer Style)
 
 Gunakan panduan ini untuk menjaga konsistensi visual bergaya *3D Educational Motion Graphics* sekaligus menghemat kuota **Google AI Pro (1.000 kredit/bulan + 50 kredit/hari)**.
 
