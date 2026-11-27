@@ -409,8 +409,7 @@ Generate:
    - Paragraph 4: Takeaway / mind-opening reflection on why this matters to our daily lives.
    - Paragraph 5 (Interaction): An engaging question to spark debate/discussion in the comment section (e.g. "Menurut kamu... ? Tulis di kolom komentar ya! 🤔👇").
    - Paragraph 6 (CTA): A high-conversion call-to-action (e.g. "Jangan lupa LIKE, SHARE, dan SUBSCRIBE untuk fakta sains unik dan mencengangkan lainnya setiap hari! 🔔✨").
-   - Paragraph 7 (Source): Exactly "Source : ${channelName}"
-   DO NOT append the hashtags block inside suggestedDescription (hashtags will be joined automatically).
+   DO NOT include any "Source :" line and DO NOT append the hashtags block inside suggestedDescription (hashtags will be joined automatically).
 3. **hashtags**: Array of AS MANY strategic hashtags as possible based on the video content and SEO keywords (25-35 tags). DO NOT include hashtags for the speaker's name or channel name. Mix with mega-viral tags (#fyp #viral #foryou #foryoupage #trending) and hyper-niche specific science/educational tags. All lowercase with # prefix. DO NOT include #Shorts for Long-Form.
 
 Respond ONLY with valid JSON, no markdown, no code blocks:
@@ -435,8 +434,7 @@ Generate:
    - Paragraph 3: Reflection on human behavior / modern life context.
    - Paragraph 4 (Interaction): A provocative question to ignite passionate comments and debate (e.g. "Menurut kamu... ? Tulis di kolom komentar ya! 🤔👇").
    - Paragraph 5 (CTA): Strong CTA (e.g. "Jangan lupa LIKE, SHARE, dan SUBSCRIBE untuk fakta sains unik dan mencengangkan lainnya setiap hari! 🔔✨").
-   - Paragraph 6 (Source): Exactly "Source : ${channelName}"
-   DO NOT append the hashtags block inside suggestedDescription (hashtags will be appended automatically).
+   DO NOT include any "Source :" line and DO NOT append the hashtags block inside suggestedDescription (hashtags will be appended automatically).
 3. **hashtags**: Array of AS MANY strategic hashtags as possible based on the video content and SEO keywords. Do not limit to 30; generate a massive list (25-35 tags). DO NOT include hashtags for the speaker's name or channel name. Mix with mega-viral tags (#fyp #viral #foryou #foryoupage #trending #Shorts) and hyper-niche specific tags. All lowercase with # prefix.
 
 Respond ONLY with valid JSON, no markdown, no code blocks:
@@ -456,11 +454,10 @@ Respond ONLY with valid JSON, no markdown, no code blocks:
   // 1. Title format: gabungkan Judul + #Tags strictly <= 100 chars (persis Clipper AI)
   const finalTitle = combineTitleWithHashtags(baseTitle, hashtags, 100, !isLong);
 
-  // 2. Description format: Storytelling + Source + Block Hashtags di bagian bawah
-  let finalDesc = String(rawDesc || "").trim();
-  if (!finalDesc.includes("Source :")) {
-    finalDesc += `\n\nSource : ${channelName}`;
-  }
+  // 2. Description format: Storytelling + Block Hashtags di bagian bawah (tanpa baris "Source :")
+  let finalDesc = String(rawDesc || "")
+    .replace(/\r?\n\s*Source\s*:.*$/gim, "")
+    .trim();
   if (hashtags.length > 0 && !finalDesc.includes(hashtags[0])) {
     finalDesc += `\n\n${hashtags.join(" ")}`;
   }

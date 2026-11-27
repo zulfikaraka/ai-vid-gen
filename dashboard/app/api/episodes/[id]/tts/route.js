@@ -52,9 +52,10 @@ export async function POST(request, { params }) {
   if (voice) pyArgs.push("--voice", voice);
   if (force) pyArgs.push("--force");
 
-  const child = spawn("python", pyArgs, {
+  const pyBin = process.env.HERMES_PY || "python";
+  const child = spawn(pyBin, pyArgs, {
     cwd: PROJECT_ROOT,
-    shell: true,
+    windowsHide: true,
   });
 
   const pushLog = (chunk) => {
@@ -65,6 +66,11 @@ export async function POST(request, { params }) {
 
   child.stdout.on("data", pushLog);
   child.stderr.on("data", pushLog);
+  child.on("error", (err) => {
+    state.status = "error";
+    state.finishedAt = new Date().toISOString();
+    state.logs.push(`❌ Failed to start Python (${pyBin}): ${err.message}`);
+  });
   child.on("close", (code) => {
     state.status = code === 0 ? "done" : "error";
     state.exitCode = code;

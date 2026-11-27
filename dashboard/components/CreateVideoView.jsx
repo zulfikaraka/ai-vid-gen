@@ -51,8 +51,14 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
   const [ttsJob, setTtsJob] = useState({ status: "idle", logs: [] });
   const [ttsTier, setTtsTier] = useState("free"); // "free" (Gemini TTS) | "paid" (ElevenLabs)
   const [ttsModel, setTtsModel] = useState("eleven_multilingual_v2");
-  const [ttsVoice, setTtsVoice] = useState("wvv6DzcHyOVTDgDY7SMW"); // Andi - Clear and confident
+  const [ttsVoice, setTtsVoice] = useState("CwhRBWXzGAHq8TQ4Fs17"); // Roger (Premade)
   const [ttsForce, setTtsForce] = useState(false);
+
+  // Step 4: Visuals (Google Flow auto-gen)
+  const [visualJob, setVisualJob] = useState({ status: "idle", logs: [] });
+  const [flowStatus, setFlowStatus] = useState(null);
+  const [checkingFlow, setCheckingFlow] = useState(false);
+  const [clipMaxCredits, setClipMaxCredits] = useState(25);
 
   // Step 5: Render job
   const [renderJob, setRenderJob] = useState({ status: "idle", logs: [] });
@@ -85,6 +91,32 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
     }, 2500);
     return () => clearInterval(t);
   }, [selectedEpId, ttsJob.status, onRefresh]);
+
+  // Poll Visuals (Flow) job while running
+  useEffect(() => {
+    if (!selectedEpId || visualJob.status !== "running") return;
+    let lastSavedCount = (visualJob.logs || []).filter((l) => l.includes("Tersimpan ->")).length;
+    const t = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/episodes/${selectedEpId}/visuals`);
+        const data = await res.json();
+        setVisualJob(data);
+        const savedCount = (data.logs || []).filter((l) => l.includes("Tersimpan ->")).length;
+        if (savedCount > lastSavedCount) {
+          lastSavedCount = savedCount;
+          onRefresh();
+        }
+        if (data.status !== "running") {
+          clearInterval(t);
+          onRefresh();
+          if (data.status === "done") onToast("✅ Auto-generate visual via Google Flow selesai!");
+        }
+      } catch {
+        // ignore transient poll error
+      }
+    }, 3000);
+    return () => clearInterval(t);
+  }, [selectedEpId, visualJob.status, onRefresh, onToast]);
 
   // Poll Render job while running
   useEffect(() => {
@@ -219,6 +251,61 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
         ? `🎙 Proses generate VO (Paid — ElevenLabs ${ttsModel}) dimulai...`
         : "🎙 Proses generate VO (Free — Gemini TTS) dimulai..."
     );
+  }
+
+  async function handleCheckFlowStatus() {
+    if (!currentEp) return;
+    setCheckingFlow(true);
+    try {
+      const res = await fetch(`/api/episodes/${currentEp.id}/visuals?checkFlow=1`);
+      const data = await res.json();
+      setFlowStatus(data);
+      if (data.signedIn && data.inProject) {
+        onToast(`✅ Flow siap (${data.plan || "active"} | kredit: ${data.credits ?? "?"})`);
+      } else {
+        onToast(`⚠️ ${data.hint || data.error || "Belum login ke Google Flow di Chrome Flow."}`);
+      }
+    } catch (err) {
+      onToast(`❌ Gagal cek Flow: ${err.message}`);
+    } finally {
+      setCheckingFlow(false);
+    }
+  }
+
+  async function handleRunFlowVisuals({ mode, fileName = "", force = false }) {
+    if (!currentEp) return;
+    if (mode === "clips") {
+      const targetDesc = fileName ? `clip "${fileName}"` : "semua Veo Hero Clips yang Missing";
+      const ok = window.confirm(
+        `Generate ${targetDesc} lewat Google Flow?\n\nIni menggunakan kredit Flow (batas max_credits = ${clipMaxCredits} per clip). Lanjutkan?`
+      );
+      if (!ok) return;
+    }
+    try {
+      const res = await fetch(`/api/episodes/${currentEp.id}/visuals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          fileName: fileName || undefined,
+          force,
+          maxCredits: mode === "clips" ? Number(clipMaxCredits) || 25 : 0,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        onToast(`❌ ${data.error || "Gagal memulai Flow"}`);
+        return;
+      }
+      setVisualJob(data);
+      onToast(
+        mode === "clips"
+          ? "🎬 Auto-generate Veo Clips di Chrome Flow dimulai..."
+          : "🎨 Auto-generate 3D Stills (0 kredit) di Chrome Flow dimulai..."
+      );
+    } catch (err) {
+      onToast(`❌ ${err.message}`);
+    }
   }
 
   async function handleUploadAsset(subdir, fileName, file) {
@@ -471,8 +558,9 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
                           onChange={(e) => setTtsVoice(e.target.value)}
                           disabled={ttsJob.status === "running"}
                         >
-                          <option value="wvv6DzcHyOVTDgDY7SMW">Andi — Clear &amp; Confident (Free/Paid)</option>
-                          <option value="TMvmhlKUioQA4U7LOoko">Andi — Friendly &amp; Calm (Paid Plan)</option>
+                          <option value="CwhRBWXzGAHq8TQ4Fs17">Roger — Premade (Free/Paid API)</option>
+                          <option value="JBFqnCBsd6RMkjVDRZzb">George — Premade (Free/Paid API)</option>
+                          <option value="EXAVITQu4vr4xnSDxMaL">Sarah — Premade (Free/Paid API)</option>
                         </select>
                         <select
                           className="input"
@@ -573,14 +661,17 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
               <div style={{ color: "var(--muted)" }}>Pilih episode dulu.</div>
             ) : (
               <>
-                <div className="space-between">
+                <div className="space-between" style={{ flexWrap: "wrap", gap: 10 }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>Visual Assets (GATE 2A Stills &amp; GATE 2B Veo Clips)</div>
                     <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                      Copy prompt ke Google Flow lalu upload file hasil generate langsung ke slot di bawah (otomatis tersimpan ke <code>assets/</code>).
+                      Generate otomatis lewat Chrome Google Flow (<code>flow-mcp</code>) atau upload manual langsung ke <code>assets/</code>.
                     </div>
                   </div>
-                  <div className="row">
+                  <div className="row" style={{ flexWrap: "wrap" }}>
+                    <button className="btn" onClick={handleCheckFlowStatus} disabled={checkingFlow || visualJob.status === "running"}>
+                      <RefreshCw size={14} /> {checkingFlow ? "Cek Flow..." : "Cek Status Flow"}
+                    </button>
                     <button className="btn" onClick={onRefresh}>
                       <RefreshCw size={14} /> Scan Folder
                     </button>
@@ -590,11 +681,44 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
                   </div>
                 </div>
 
+                {flowStatus && (
+                  <div className="card-subtle" style={{ fontSize: 12.5, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                    <span>
+                      Status Google Flow:{" "}
+                      {flowStatus.signedIn && flowStatus.inProject ? (
+                        <strong style={{ color: "var(--success, #22c55e)" }}>Terhubung &amp; Siap</strong>
+                      ) : (
+                        <strong style={{ color: "var(--warning, #f59e0b)" }}>Belum Siap</strong>
+                      )}
+                      {flowStatus.plan ? ` · Plan: ${flowStatus.plan}` : ""}
+                      {flowStatus.credits !== undefined && flowStatus.credits !== null ? ` · Sisa kredit: ${flowStatus.credits}` : ""}
+                    </span>
+                    {flowStatus.hint && <span style={{ color: "var(--muted)" }}>{flowStatus.hint}</span>}
+                  </div>
+                )}
+
+                {visualJob.logs?.length > 0 && <div className="log-box">{visualJob.logs.join("\n")}</div>}
+
                 {/* GATE 2A Stills */}
                 <div>
-                  <div style={{ fontWeight: 700, marginBottom: 10 }}>
-                    GATE 2A — 3D Stills ({currentEp.assets.stills.filter((s) => s.exists).length}/
-                    {currentEp.assets.stills.length} ready)
+                  <div className="space-between" style={{ marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                    <div style={{ fontWeight: 700 }}>
+                      GATE 2A — 3D Stills ({currentEp.assets.stills.filter((s) => s.exists).length}/
+                      {currentEp.assets.stills.length} ready)
+                    </div>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      disabled={
+                        visualJob.status === "running" ||
+                        currentEp.assets.stills.filter((s) => !s.exists).length === 0
+                      }
+                      onClick={() => handleRunFlowVisuals({ mode: "stills" })}
+                    >
+                      <Sparkles size={13} />{" "}
+                      {visualJob.status === "running" && visualJob.mode === "stills"
+                        ? "Generating Stills..."
+                        : `Auto-Generate Missing Stills (${currentEp.assets.stills.filter((s) => !s.exists).length}) · 0 cr`}
+                    </button>
                   </div>
                   <div className="grid-3">
                     {currentEp.assets.stills.map((s) => (
@@ -617,12 +741,22 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
                           />
                         )}
                         {s.prompt && (
-                          <button className="btn btn-sm" onClick={() => copyText(s.prompt)}>
-                            <Copy size={12} /> Copy Prompt
-                          </button>
+                          <div className="row" style={{ gap: 6 }}>
+                            <button
+                              className="btn btn-sm btn-primary"
+                              style={{ flex: 1 }}
+                              disabled={visualJob.status === "running"}
+                              onClick={() => handleRunFlowVisuals({ mode: "stills", fileName: s.fileName, force: s.exists })}
+                            >
+                              <Sparkles size={12} /> {s.exists ? "Regen Flow" : "Auto Flow"}
+                            </button>
+                            <button className="btn btn-sm" onClick={() => copyText(s.prompt)} title="Copy Prompt">
+                              <Copy size={12} />
+                            </button>
+                          </div>
                         )}
-                        <label className="btn btn-sm btn-primary" style={{ width: "100%" }}>
-                          <Upload size={12} /> {s.exists ? "Ganti Still" : "Upload Still"}
+                        <label className="btn btn-sm" style={{ width: "100%" }}>
+                          <Upload size={12} /> {s.exists ? "Ganti Still (Manual)" : "Upload Still (Manual)"}
                           <input
                             type="file"
                             accept="image/*"
@@ -637,9 +771,39 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
 
                 {/* GATE 2B Veo Clips */}
                 <div>
-                  <div style={{ fontWeight: 700, marginBottom: 10 }}>
-                    GATE 2B — Veo Hero Clips ({currentEp.assets.clips.filter((c) => c.exists).length}/
-                    {currentEp.assets.clips.length} ready)
+                  <div className="space-between" style={{ marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                    <div style={{ fontWeight: 700 }}>
+                      GATE 2B — Veo Hero Clips ({currentEp.assets.clips.filter((c) => c.exists).length}/
+                      {currentEp.assets.clips.length} ready)
+                    </div>
+                    <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+                      <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--muted)" }}>
+                        Max cr/clip:
+                        <input
+                          type="number"
+                          className="input"
+                          min={0}
+                          max={100}
+                          value={clipMaxCredits}
+                          onChange={(e) => setClipMaxCredits(e.target.value)}
+                          disabled={visualJob.status === "running"}
+                          style={{ width: 64, padding: "4px 6px", fontSize: 12 }}
+                        />
+                      </label>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        disabled={
+                          visualJob.status === "running" ||
+                          currentEp.assets.clips.filter((c) => !c.exists).length === 0
+                        }
+                        onClick={() => handleRunFlowVisuals({ mode: "clips" })}
+                      >
+                        <Sparkles size={13} />{" "}
+                        {visualJob.status === "running" && visualJob.mode === "clips"
+                          ? "Generating Clips..."
+                          : `Auto-Generate Missing Clips (${currentEp.assets.clips.filter((c) => !c.exists).length})`}
+                      </button>
+                    </div>
                   </div>
                   <div className="grid-3">
                     {currentEp.assets.clips.map((c) => (
@@ -663,12 +827,22 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
                           />
                         )}
                         {c.prompt && (
-                          <button className="btn btn-sm" onClick={() => copyText(c.prompt)}>
-                            <Copy size={12} /> Copy Prompt
-                          </button>
+                          <div className="row" style={{ gap: 6 }}>
+                            <button
+                              className="btn btn-sm btn-primary"
+                              style={{ flex: 1 }}
+                              disabled={visualJob.status === "running"}
+                              onClick={() => handleRunFlowVisuals({ mode: "clips", fileName: c.fileName, force: c.exists })}
+                            >
+                              <Sparkles size={12} /> {c.exists ? "Regen Flow" : "Auto Flow"}
+                            </button>
+                            <button className="btn btn-sm" onClick={() => copyText(c.prompt)} title="Copy Prompt">
+                              <Copy size={12} />
+                            </button>
+                          </div>
                         )}
-                        <label className="btn btn-sm btn-primary" style={{ width: "100%" }}>
-                          <Upload size={12} /> {c.exists ? "Ganti Clip" : "Upload MP4"}
+                        <label className="btn btn-sm" style={{ width: "100%" }}>
+                          <Upload size={12} /> {c.exists ? "Ganti Clip (Manual)" : "Upload MP4 (Manual)"}
                           <input
                             type="file"
                             accept="video/mp4,video/*"
@@ -714,6 +888,13 @@ export default function CreateVideoView({ episodes, onRefresh, onToast, onGoVide
                       disabled={renderJob.status === "running"}
                     >
                       Render Long Only
+                    </button>
+                    <button
+                      className="btn"
+                      onClick={() => handleStartRender("shorts")}
+                      disabled={renderJob.status === "running"}
+                    >
+                      Render Shorts Only
                     </button>
                     <button
                       className="btn btn-primary"

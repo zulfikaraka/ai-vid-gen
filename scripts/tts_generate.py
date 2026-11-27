@@ -18,6 +18,7 @@ import json
 import os
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 import wave
 from pathlib import Path
@@ -210,8 +211,21 @@ def generate_elevenlabs_beat(
         "voice_settings": {"stability": 0.45, "similarity_boost": 0.78, "style": 0.35, "use_speaker_boost": True},
     }).encode("utf-8")
     req = urllib.request.Request(url, data=payload, headers={"xi-api-key": api_key, "Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=90) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as err:
+        detail = err.read().decode("utf-8", errors="ignore")
+        hint = ""
+        if err.code == 402:
+            hint = (
+                "\nHint: HTTP 402 dari ElevenLabs biasanya karena:\n"
+                "  1) Voice default (wvv6DzcHyOVTDgDY7SMW / Andi) adalah Voice Library yang butuh paket berbayar di API. "
+                "Untuk akun Free, pakai premade voice seperti Roger (CwhRBWXzGAHq8TQ4Fs17) atau George (JBFqnCBsd6RMkjVDRZzb) "
+                "dengan menambahkan ELEVENLABS_VOICE_ID=CwhRBWXzGAHq8TQ4Fs17 di ai-vid-gen/.env (atau isi kolom Voice di UI).\n"
+                "  2) Atau kuota kredit ElevenLabs akunmu sudah habis."
+            )
+        sys.exit(f"ElevenLabs API error HTTP {err.code}: {detail}{hint}")
     out_mp3.write_bytes(base64.b64decode(data["audio_base64"]))
     return probe_duration(out_mp3), chars_to_words(data.get("alignment", {}))
 
@@ -249,7 +263,7 @@ def main() -> None:
         if provider == "gemini":
             args.voice = "Puck"
         elif provider == "elevenlabs":
-            args.voice = os.environ.get("ELEVENLABS_VOICE_ID", "wvv6DzcHyOVTDgDY7SMW")  # Andi - Clear and confident
+            args.voice = os.environ.get("ELEVENLABS_VOICE_ID", "CwhRBWXzGAHq8TQ4Fs17")  # Roger (Premade)
         else:
             args.voice = "id-ID-ArdiNeural"
 

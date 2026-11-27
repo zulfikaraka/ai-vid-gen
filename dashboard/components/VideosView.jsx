@@ -598,16 +598,88 @@ export default function VideosView({ episodes, accounts, onRefresh, onToast }) {
                   </div>
                 </div>
 
-                {publishMode === "schedule" && (
-                  <div className="field">
-                    <label>Tanggal &amp; Jam Tayang (WIB / Waktu Lokal)</label>
-                    <input
-                      type="datetime-local"
-                      value={scheduleLocal}
-                      onChange={(e) => setScheduleLocal(e.target.value)}
-                    />
-                  </div>
-                )}
+                {publishMode === "schedule" && (() => {
+                  const [datePart = "", timePart = "18:30"] = (scheduleLocal || "").split("T");
+                  const timeOptions = [];
+                  for (let h = 6; h <= 23; h++) {
+                    for (const m of [0, 30]) {
+                      timeOptions.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+                    }
+                  }
+                  if (timePart && !timeOptions.includes(timePart)) {
+                    timeOptions.push(timePart);
+                    timeOptions.sort();
+                  }
+                  const setDateAndTime = (d, t) => {
+                    if (!d) return;
+                    setScheduleLocal(`${d}T${t || "18:30"}`);
+                  };
+                  // Quick-pick upcoming recommended slots from Playbook
+                  const quickSlots = [];
+                  const wantLong = selected?.kind === "long";
+                  const targetDows = wantLong ? [4, 6] : [2, 3, 5, 0]; // Kam/Sab for Long; Sel/Rab/Jum/Min for Shorts
+                  const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+                  const now = new Date();
+                  for (let offset = 0; offset < 14 && quickSlots.length < 4; offset++) {
+                    const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+                    if (!targetDows.includes(dt.getDay())) continue;
+                    const y = dt.getFullYear();
+                    const mo = String(dt.getMonth() + 1).padStart(2, "0");
+                    const da = String(dt.getDate()).padStart(2, "0");
+                    const hh = wantLong ? "19:00" : "18:30";
+                    quickSlots.push({
+                      key: `${y}-${mo}-${da}T${hh}`,
+                      date: `${y}-${mo}-${da}`,
+                      time: hh,
+                      label: `${dayNames[dt.getDay()]} ${dt.getDate()}/${dt.getMonth() + 1} · ${hh}`,
+                    });
+                  }
+
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div className="grid-2">
+                        <div className="field">
+                          <label>Tanggal Tayang</label>
+                          <input
+                            type="date"
+                            value={datePart}
+                            onChange={(e) => setDateAndTime(e.target.value, timePart)}
+                            onClick={(e) => e.currentTarget.showPicker?.()}
+                            onKeyDown={(e) => e.preventDefault()}
+                            style={{ cursor: "pointer", colorScheme: "dark" }}
+                          />
+                        </div>
+                        <div className="field">
+                          <label>Jam Tayang (WIB)</label>
+                          <select
+                            value={timePart}
+                            onChange={(e) => setDateAndTime(datePart, e.target.value)}
+                          >
+                            {timeOptions.map((t) => (
+                              <option key={t} value={t}>
+                                {t} WIB
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 11, color: "var(--muted)" }}>Rekomendasi cepat:</span>
+                        {quickSlots.map((qs) => (
+                          <button
+                            key={qs.key}
+                            type="button"
+                            className={`btn btn-sm ${scheduleLocal === qs.key ? "btn-primary" : ""}`}
+                            style={{ padding: "3px 8px", fontSize: 11 }}
+                            onClick={() => setDateAndTime(qs.date, qs.time)}
+                          >
+                            {qs.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {selected.youtubeUrl && (
                   <div style={{ fontSize: 12.5, color: "#86efac" }}>
